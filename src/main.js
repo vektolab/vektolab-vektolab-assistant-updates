@@ -17,10 +17,12 @@ let contentCheckRunning = false;
 let panelOpen = false;
 let panelMode = 'home';
 let dragState = null;
-let physicsTimer = null;
 let currentGenerator = null;
 
 const AVATAR_SIZE = [90,90];
+let physicsTimer = null;
+let physicsBounceCount = 0;
+const MAX_BOUNCES = 5;
 const PANEL_SIZE = [430,650];
 const CATALOG_SIZE = [620,780];
 const POSITION_FILE = 'window-position.json';
@@ -163,87 +165,59 @@ function setPanelOpen(open){
     assistantWindow.show();assistantWindow.focus();
   }else{
     resizeForState(false);
-    assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
   }
 }
-function stopAvatarPhysics(){
+function stopAvatarPhysics(save=true){
   if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
-}
-
-function beginAvatarDrag(x,y){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
-  stopAvatarPhysics();
-  if(panelOpen)setPanelOpen(false);
-  const [wx,wy]=assistantWindow.getPosition();
-  dragState={startX:wx,startY:wy,pointerX:x,pointerY:y,vx:0,vy:0,lastX:x,lastY:y,lastTime:Date.now()};
-}
-function moveAvatarDrag(x,y,vx,vy){
-  if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
-  const [w,h]=AVATAR_SIZE;
-  const area=screen.getDisplayNearestPoint({x,y}).workArea;
-  let nx=dragState.startX+x-dragState.pointerX;
-  let ny=dragState.startY+y-dragState.pointerY;
-  nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
-  ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
-  dragState.vx=Number.isFinite(vx)?vx:dragState.vx;
-  dragState.vy=Number.isFinite(vy)?vy:dragState.vy;
-  assistantWindow.setPosition(Math.round(nx),Math.round(ny),false);
-  dragState.startX=nx+x-dragState.pointerX;
-  dragState.startY=ny+y-dragState.pointerY;
-  dragState.pointerX=x;
-  dragState.pointerY=y;
-}
-function endAvatarDrag(vx,vy){
-  if(!dragState)return;
-  const state=dragState;
-  dragState=null;
-  const finalVx=Number.isFinite(vx)?vx:state.vx||0;
-  const finalVy=Number.isFinite(vy)?vy:state.vy||0;
-  const speed=Math.hypot(finalVx,finalVy);
-  if(speed<650){saveAvatarCenter(avatarCenter());return;}
-  startAvatarPhysics(finalVx,finalVy);
+  if(save&&assistantWindow&&!assistantWindow.isDestroyed())saveAvatarCenter(avatarCenter());
 }
 function startAvatarPhysics(vx,vy){
-  stopAvatarPhysics();
+  stopAvatarPhysics(false);
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const [w,h]=AVATAR_SIZE;
-  let position=assistantWindow.getPosition();
-  let px=position[0],py=position[1];
-  let velX=Math.max(-2600,Math.min(2600,vx));
-  let velY=Math.max(-2600,Math.min(2600,vy));
-  let bounces=0;
-  let last=Date.now();
-  const gravity=980;
-  const restitution=0.68;
-  const air=0.992;
-  const maxBounces=5;
+  const speed=Math.hypot(vx,vy);
+  if(speed<180){saveAvatarCenter(avatarCenter());return;}
+  physicsBounceCount=0;
+  let last=Date.now(),pos=assistantWindow.getPosition();
+  let velocityX=Math.max(-2600,Math.min(2600,vx));
+  let velocityY=Math.max(-2600,Math.min(2600,vy));
+  const gravity=720,friction=.994,restitution=.72;
   physicsTimer=setInterval(()=>{
-    if(!assistantWindow||assistantWindow.isDestroyed()){stopAvatarPhysics();return;}
-    const now=Date.now();
-    const dt=Math.min(.032,Math.max(.008,(now-last)/1000));
-    last=now;
-    velY+=gravity*dt;
-    velX*=Math.pow(air,dt*60);
-    velY*=Math.pow(air,dt*60);
-    px+=velX*dt; py+=velY*dt;
-    const point={x:Math.round(px+w/2),y:Math.round(py+h/2)};
-    const area=screen.getDisplayNearestPoint(point).workArea;
+    if(!assistantWindow||assistantWindow.isDestroyed()){stopAvatarPhysics(false);return;}
+    const now=Date.now(),dt=Math.min(.032,Math.max(.008,(now-last)/1000));last=now;
+    velocityY+=gravity*dt;
+    velocityX*=Math.pow(friction,dt*60); velocityY*=Math.pow(friction,dt*60);
+    pos[0]+=velocityX*dt; pos[1]+=velocityY*dt;
+    const [w,h]=AVATAR_SIZE,area=getWorkAreaForPoint(pos[0]+w/2,pos[1]+h/2);
     let hit=null;
-    if(px<=area.x){px=area.x;velX=Math.abs(velX)*restitution;hit='left';}
-    else if(px+w>=area.x+area.width){px=area.x+area.width-w;velX=-Math.abs(velX)*restitution;hit='right';}
-    if(py<=area.y){py=area.y;velY=Math.abs(velY)*restitution;hit=hit||'top';}
-    else if(py+h>=area.y+area.height){py=area.y+area.height-h;velY=-Math.abs(velY)*restitution;hit=hit||'bottom';}
-    if(hit){
-      bounces++;
-      if(!assistantWindow.isDestroyed())assistantWindow.webContents.send('avatar-edge-bounce',hit);
-    }
-    assistantWindow.setPosition(Math.round(px),Math.round(py),false);
-    if(bounces>=maxBounces || (bounces>0 && Math.hypot(velX,velY)<210)){
-      stopAvatarPhysics();
-      saveAvatarCenter(avatarCenter());
-    }
+    if(pos[0]<=area.x){pos[0]=area.x;velocityX=Math.abs(velocityX)*restitution;hit='left'}
+    else if(pos[0]+w>=area.x+area.width){pos[0]=area.x+area.width-w;velocityX=-Math.abs(velocityX)*restitution;hit='right'}
+    if(pos[1]<=area.y){pos[1]=area.y;velocityY=Math.abs(velocityY)*restitution;hit=hit||'top'}
+    else if(pos[1]+h>=area.y+area.height){pos[1]=area.y+area.height-h;velocityY=-Math.abs(velocityY)*restitution;hit=hit||'bottom'}
+    if(hit){physicsBounceCount++;assistantWindow.webContents.send('avatar-edge-bounce',hit);}
+    assistantWindow.setPosition(Math.round(pos[0]),Math.round(pos[1]),false);
+    if(physicsBounceCount>=MAX_BOUNCES||Math.hypot(velocityX,velocityY)<75)stopAvatarPhysics(true);
   },16);
+}
+function beginAvatarDrag(x,y){
+  if(!assistantWindow||assistantWindow.isDestroyed())return;
+  stopAvatarPhysics(false);
+  const [wx,wy]=assistantWindow.getPosition();
+  dragState={startX:wx,startY:wy,pointerX:x,pointerY:y,lastEdgeHit:0};
+}
+function moveAvatarDrag(x,y){
+  if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
+  const [w,h]=AVATAR_SIZE,area=getWorkAreaForPoint(x,y);
+  let nx=dragState.startX+x-dragState.pointerX,ny=dragState.startY+y-dragState.pointerY,hit=null;
+  if(nx<area.x){nx=area.x;hit='left'} else if(nx+w>area.x+area.width){nx=area.x+area.width-w;hit='right'}
+  if(ny<area.y){ny=area.y;hit=hit||'top'} else if(ny+h>area.y+area.height){ny=area.y+area.height-h;hit=hit||'bottom'}
+  if(hit){const now=Date.now();if(now-dragState.lastEdgeHit>150){dragState.lastEdgeHit=now;assistantWindow.webContents.send('avatar-edge-bounce',hit);}}
+  assistantWindow.setPosition(Math.round(nx),Math.round(ny),false);
+}
+function endAvatarDrag(vx,vy){
+  if(!dragState)return;dragState=null;
+  if(Math.hypot(vx||0,vy||0)<180){saveAvatarCenter(avatarCenter());return;}
+  startAvatarPhysics(vx||0,vy||0);
 }
 
 function openGenerator(slug){
@@ -308,13 +282,11 @@ function createAssistant(){
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   assistantWindow.setAlwaysOnTop(true,'floating');
-  assistantWindow.setSkipTaskbar(true);
   assistantWindow.setIgnoreMouseEvents(false);
   assistantWindow.setFocusable(true);
   assistantWindow.loadFile(path.join(__dirname,'assistant.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{
     resizeForState(false);
-    assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
     assistantWindow.webContents.send('update-state',updateState);
     assistantWindow.webContents.send('app-version',app.getVersion());
@@ -343,7 +315,7 @@ app.whenReady().then(()=>{
   ipcMain.on('set-panel-open',(_e,open)=>setPanelOpen(!!open));
   ipcMain.on('avatar-drag-start',(_e,d)=>beginAvatarDrag(d?.x||0,d?.y||0));
   ipcMain.on('avatar-drag-move',(_e,d)=>moveAvatarDrag(d?.x||0,d?.y||0));
-  ipcMain.on('avatar-drag-end',()=>endAvatarDrag());
+  ipcMain.on('avatar-drag-end',(_e,d)=>endAvatarDrag(d?.vx||0,d?.vy||0));
   ipcMain.on('quit-app',()=>app.quit());
   ipcMain.on('check-updates',()=>checkForUpdates());
   ipcMain.on('download-update',()=>downloadUpdate());

@@ -1,14 +1,13 @@
 const avatar=document.getElementById('avatar');
-let dragging=false,pointerId=null,last=null,lastTime=0,moved=false,lastVx=0,lastVy=0,finished=false;
+let dragging=false,pointerId=null,last=null,lastTime=0,moved=false,lastVx=0,lastVy=0;
 
 function clamp(v){return Math.max(-2600,Math.min(2600,v));}
 
-function begin(e){
-  if(e.button!==0 || dragging)return;
+avatar.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
   e.preventDefault();
   e.stopPropagation();
   dragging=true;
-  finished=false;
   pointerId=e.pointerId;
   moved=false;
   last={x:e.screenX,y:e.screenY};
@@ -17,50 +16,60 @@ function begin(e){
   avatar.classList.add('dragging');
   try{avatar.setPointerCapture(e.pointerId);}catch(_){}
   window.vektolab.startAvatarDrag(e.screenX,e.screenY);
-}
+});
 
-function move(e){
+window.addEventListener('pointermove',e=>{
   if(!dragging||e.pointerId!==pointerId)return;
   e.preventDefault();
-  const now=performance.now(),dt=Math.max(1,now-lastTime);
-  const dx=e.screenX-last.x,dy=e.screenY-last.y;
-  if(Math.abs(dx)+Math.abs(dy)>4)moved=true;
-  const vx=clamp(dx/(dt/1000)),vy=clamp(dy/(dt/1000));
+  const now=performance.now();
+  const dt=Math.max(1,now-lastTime);
+  const dx=e.screenX-last.x;
+  const dy=e.screenY-last.y;
+  if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
+  const vx=clamp(dx/(dt/1000));
+  const vy=clamp(dy/(dt/1000));
   lastVx=vx;lastVy=vy;
   const tilt=Math.max(-18,Math.min(18,vx*.012+dy*.01));
   avatar.style.setProperty('--tilt',`${tilt.toFixed(2)}deg`);
   window.vektolab.moveAvatarDrag(e.screenX,e.screenY,vx,vy);
-  last={x:e.screenX,y:e.screenY};lastTime=now;
-}
+  last={x:e.screenX,y:e.screenY};
+  lastTime=now;
+},{passive:false});
 
 function finish(e){
-  if(!dragging||e.pointerId!==pointerId||finished)return;
-  finished=true;
-  e.preventDefault();
-  e.stopPropagation();
-  const now=performance.now(),dt=Math.max(1,now-lastTime);
-  const rvx=clamp((e.screenX-last.x)/(dt/1000)),rvy=clamp((e.screenY-last.y)/(dt/1000));
-  const vx=Math.abs(rvx)>120?rvx:lastVx,vy=Math.abs(rvy)>120?rvy:lastVy;
-  const wasClick=!moved;
-  dragging=false;pointerId=null;
-  try{avatar.releasePointerCapture?.(e.pointerId);}catch(_){}
+  if(!dragging||e.pointerId!==pointerId)return;
+  const now=performance.now();
+  const dt=Math.max(1,now-lastTime);
+  const rvx=clamp((e.screenX-last.x)/(dt/1000));
+  const rvy=clamp((e.screenY-last.y)/(dt/1000));
+  const vx=Math.abs(rvx)>120?rvx:lastVx;
+  const vy=Math.abs(rvy)>120?rvy:lastVy;
+
+  dragging=false;
+  pointerId=null;
   avatar.classList.remove('dragging');
   avatar.style.removeProperty('--tilt');
+
   window.vektolab.endAvatarDrag(vx,vy);
-  if(wasClick){
-    // Abrir el menú desde el propio gesto de puntero, sin depender del evento click.
-    setTimeout(()=>window.vektolab.togglePanel(),0);
+
+  // Only a click (not a drag) opens/closes the panel.
+  if(!moved){
+    window.vektolab.togglePanel();
   }
 }
 
-avatar.addEventListener('pointerdown',begin);
-avatar.addEventListener('pointerup',finish);
-avatar.addEventListener('pointercancel',finish);
-window.addEventListener('pointermove',move,{passive:false});
 window.addEventListener('pointerup',finish);
 window.addEventListener('pointercancel',finish);
 
+window.vektolab.onAvatarEdgeBounce?.(()=>{
+  avatar.classList.remove('edge-hit');
+  void avatar.offsetWidth;
+  avatar.classList.add('edge-hit');
+  setTimeout(()=>avatar.classList.remove('edge-hit'),260);
+});
+
 avatar.addEventListener('contextmenu',e=>{
-  e.preventDefault();e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
   if(!dragging)window.vektolab.showAvatarMenu();
 });
