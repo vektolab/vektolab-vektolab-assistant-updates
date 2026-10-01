@@ -6,6 +6,10 @@
       "sha256": "0a687baac05ef7d4f84792718b993eeeedc02ac7b47c0edab4166f50f268d66a"
     },
     {
+      "path": "content/disenos.json",
+      "sha256": "bc0c696721cea6c557c0b9d1a67ff74fe688de554ee278d64dc3bf3d04008259"
+    },
+    {
       "path": "content/favicon.png",
       "sha256": "07185923142c476c309bef4c5baec0c8e982d853c14a08c1c69731ab669f4eb9"
     },

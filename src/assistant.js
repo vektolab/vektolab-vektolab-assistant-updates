@@ -1,45 +1,157 @@
 const app=document.getElementById('app'), avatar=document.getElementById('avatar'), search=document.getElementById('search'), designs=document.getElementById('designs');
-const update=document.getElementById('update'), contentUpdate=document.getElementById('contentUpdate');
 const checkUpdatesButton=document.getElementById('checkUpdates'), versionLabel=document.getElementById('versionLabel');
-let items=[];
-function openPanel(){app.classList.add('open'); setTimeout(()=>search.focus(),80)}
-function closePanel(){app.classList.remove('open')}
+const toastStack=document.getElementById('toastStack'), tabGenerators=document.getElementById('tabGenerators'), tabDesigns=document.getElementById('tabDesigns');
+let items=[]; let staticDesigns=[]; let activeTab='generators'; let catalogMode=false; let toastTimers=[];
+
+function openPanel(){
+ app.classList.add('open');
+ window.vektolab.setPanelOpen(true);
+ setTimeout(()=>search.focus(),80);
+}
+function closePanel(){
+ app.classList.remove('open');
+ window.vektolab.setPanelOpen(false);
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function currentItems(){return activeTab==='designs'?staticDesigns:items}
+function cardMarkup(i,type){return `<button class="card" type="button" data-slug="${escapeHtml(i.slug)}" data-type="${type}"><span class="thumb">${i.image?`<img src="${i.image}" alt="${escapeHtml(i.name)}">`:''}</span><span class="name">${escapeHtml(i.name)}</span></button>`}
 function render(q=''){
  const query=q.toLowerCase().trim();
- const list=items.filter(i=>(i.name||'').toLowerCase().includes(query));
- designs.innerHTML=list.length?list.map(i=>`<button class="card" type="button" data-slug="${i.slug}"><span class="thumb">${i.image?`<img src="${i.image}" alt="${i.name}">`:''}</span><span class="name">${i.name}</span></button>`).join(''):'<div class="empty">No encontramos ese generador.</div>';
- designs.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>window.vektolab.openGenerator(c.dataset.slug)));
+ if(catalogMode){
+   const gens=items.filter(i=>(i.name||'').toLowerCase().includes(query));
+   const des=staticDesigns.filter(i=>(i.name||'').toLowerCase().includes(query));
+   const genCards=gens.length?gens.map(i=>cardMarkup(i,'generators')).join(''):`<div class="empty">No encontramos generadores.</div>`;
+   const desCards=des.length?des.map(i=>cardMarkup(i,'designs')).join(''):`<div class="empty">Todavía no hay diseños disponibles.</div>`;
+   designs.innerHTML=`<div class="catalog-group"><div class="catalog-title">Generadores <span>${gens.length}</span></div><div class="catalog-grid">${genCards}</div></div><div class="catalog-group"><div class="catalog-title">Diseños <span>${des.length}</span></div><div class="catalog-grid">${desCards}</div></div>`;
+ }else{
+   const list=currentItems().filter(i=>(i.name||'').toLowerCase().includes(query));
+   const emptyText=activeTab==='designs'?'Todavía no hay diseños disponibles.':'No encontramos ese generador.';
+   designs.innerHTML=list.length?list.map(i=>cardMarkup(i,activeTab)).join(''):`<div class="empty">${emptyText}</div>`;
+ }
+ designs.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{
+   const type=c.dataset.type;
+   if(type==='generators') window.vektolab.openGenerator(c.dataset.slug);
+   else window.vektolab.openDesign(c.dataset.slug);
+ }));
+}
+function selectTab(tab){activeTab=tab; tabGenerators.classList.toggle('active',tab==='generators'); tabDesigns.classList.toggle('active',tab==='designs'); search.placeholder=tab==='designs'?'Buscar diseños...':'Buscar generadores...'; render(search.value)}
+function clearToasts(){toastTimers.forEach(t=>clearTimeout(t));toastTimers=[];toastStack.innerHTML=''}
+function showToast(message,{kind='content',duration=5000,progress=null}={}){
+ const el=document.createElement('div'); el.className=`toast ${kind==='update'?'update-toast':''}`; el.innerHTML=`<span>${message}</span>${progress!==null?`<div class="progress"><i style="width:${progress}%"></i></div>`:''}<button class="toast-close" type="button" aria-label="Cerrar">×</button>`;
+ toastStack.appendChild(el);
+ const close=()=>{el.remove(); if(timer)clearTimeout(timer)}; el.querySelector('.toast-close').addEventListener('click',close);
+ const timer=setTimeout(close,duration); toastTimers.push(timer);
+ return el;
 }
 function showUpdate(state){
- if(!update) return;
- update.className='update '+(state?.status||'idle');
- if(state?.status==='available') update.innerHTML=`<span>✨ Nueva versión ${state.version}. Descargando…</span>`;
- else if(state?.status==='downloading') update.innerHTML=`<span>⬇ Descargando actualización ${state.percent||0}%</span><div class="progress"><i style="width:${state.percent||0}%"></i></div>`;
- else if(state?.status==='downloaded') update.innerHTML=`<span>✓ ${state.version} está lista.</span><button id="updateAction">Reiniciar y actualizar</button>`;
- else if(state?.status==='checking') update.innerHTML='<span>Buscando actualizaciones…</span>';
- else if(state?.status==='up-to-date') update.innerHTML='<span>✓ Ya tienes la última versión.</span>';
- else if(state?.status==='error') update.innerHTML='<span>⚠ No se pudo comprobar la actualización.</span>';
- else update.innerHTML='';
- const action=document.getElementById('updateAction'); if(action) action.addEventListener('click',()=>window.vektolab.installUpdate());
+ if(state?.status==='available') showToast(`✨ Nueva versión ${state.version}. Descargando…`,{kind:'update',duration:8000});
+ else if(state?.status==='downloading') { clearToasts(); showToast(`⬇ Descargando actualización ${state.percent||0}%`,{kind:'update',duration:15000,progress:state.percent||0}); }
+ else if(state?.status==='downloaded') showUpdateReady(state.version);
+ else if(state?.status==='error') showToast('⚠ No se pudo comprobar la actualización.',{kind:'update',duration:5000});
+ // Intencionalmente no mostramos "ya tienes la última versión".
+}
+function showUpdateReady(version){
+ clearToasts();
+ const el=showToast(`✓ ${version} está lista.`,{kind:'update',duration:5000});
+ const button=document.createElement('button'); button.textContent='Reiniciar y actualizar'; button.style.cssText='margin:7px 0 0 0;border:0;border-radius:8px;background:#111827;color:#fff;padding:6px 9px;font-size:10px;cursor:pointer';
+ el.appendChild(button); button.addEventListener('click',()=>window.vektolab.installUpdate());
 }
 function showContentUpdate(state){
- if(!contentUpdate) return;
- if(state?.status==='checking') contentUpdate.textContent='Buscando cambios en tus generadores…';
- else if(state?.status==='downloading') contentUpdate.textContent=`Actualizando generadores… ${state.percent||0}%`;
- else if(state?.status==='updated') contentUpdate.textContent=`✓ Generadores actualizados (${state.updated||0} archivos)`;
- else if(state?.status==='up-to-date') contentUpdate.textContent='✓ Generadores actualizados';
- else if(state?.status==='offline') contentUpdate.textContent='✓ Generadores disponibles. No se pudo comprobar si hay cambios ahora.';
- else if(state?.status==='error') contentUpdate.textContent='⚠ No se pudieron cargar los generadores';
- else contentUpdate.textContent='';
+ if(state?.status==='checking'||state?.status==='up-to-date') return;
+ if(state?.status==='downloading') {clearToasts(); showToast(`Actualizando generadores… ${state.percent||0}%`,{duration:15000,progress:state.percent||0});}
+ else if(state?.status==='updated') showToast(`✓ Generadores actualizados (${state.updated||0} archivos)`,{duration:5000});
+ else if(state?.status==='offline') showToast('✓ Generadores disponibles. No se pudo comprobar si hay cambios ahora.',{duration:5000});
+ else if(state?.status==='error') showToast('⚠ No se pudieron cargar los generadores.',{duration:5000});
 }
+
+// --- Movimiento físico de Vekto -------------------------------------------------
+let avatarDragging=false;
+let dragPointerId=null;
+let lastPointer=null;
+let wasPanelOpenAtDragStart=false;
+let lastPointerTime=0;
+let dragMoved=false;
+
+function clampVelocity(value){
+ return Math.max(-2200, Math.min(2200, value));
+}
+
+avatar.addEventListener('pointerdown', e=>{
+ if(e.button!==0) return;
+ e.preventDefault();
+ e.stopPropagation();
+
+ // Si el panel está abierto y se empieza a arrastrar, se convierte en el avatar.
+ if(app.classList.contains('open')){
+   closePanel();
+ }
+
+ wasPanelOpenAtDragStart=app.classList.contains('open');
+ avatarDragging=true;
+ dragPointerId=e.pointerId;
+ dragMoved=false;
+ lastPointer={x:e.screenX,y:e.screenY};
+ lastPointerTime=performance.now();
+ avatar.classList.add('dragging');
+ avatar.setPointerCapture?.(e.pointerId);
+ window.vektolab.startAvatarDrag(e.screenX,e.screenY);
+});
+
+window.addEventListener('pointermove', e=>{
+ if(!avatarDragging || e.pointerId!==dragPointerId) return;
+ e.preventDefault();
+
+ const now=performance.now();
+ const dt=Math.max(1,now-lastPointerTime);
+ const dx=e.screenX-lastPointer.x;
+ const dy=e.screenY-lastPointer.y;
+
+ if(Math.abs(dx)+Math.abs(dy)>2) dragMoved=true;
+
+ const vx=clampVelocity(dx/(dt/1000));
+ const vy=clampVelocity(dy/(dt/1000));
+ const tilt=Math.max(-16,Math.min(16,vx*0.012+dy*0.01));
+ avatar.style.transform=`rotate(${tilt.toFixed(2)}deg)`;
+
+ window.vektolab.moveAvatarDrag(e.screenX,e.screenY,vx,vy);
+
+ lastPointer={x:e.screenX,y:e.screenY};
+ lastPointerTime=now;
+},{passive:false});
+
+function finishAvatarDrag(e){
+ if(!avatarDragging || e.pointerId!==dragPointerId) return;
+ const now=performance.now();
+ const dt=Math.max(1,now-lastPointerTime);
+ const vx=clampVelocity((e.screenX-lastPointer.x)/(dt/1000));
+ const vy=clampVelocity((e.screenY-lastPointer.y)/(dt/1000));
+
+ avatarDragging=false;
+ dragPointerId=null;
+ avatar.classList.remove('dragging');
+ avatar.style.transform='';
+ window.vektolab.endAvatarDrag(vx,vy);
+
+ // A click without movement still opens/closes Vekto.
+ if(!dragMoved){
+   wasPanelOpenAtDragStart ? closePanel() : openPanel();
+ }
+}
+window.addEventListener('pointerup',finishAvatarDrag);
+window.addEventListener('pointercancel',finishAvatarDrag);
+
 window.vektolab.onGenerators(list=>{items=Array.isArray(list)?list:[]; render(search.value);});
+window.vektolab.onDesigns(list=>{staticDesigns=Array.isArray(list)?list:[]; if(activeTab==='designs') render(search.value);});
+window.vektolab.onCatalogMode(()=>{catalogMode=true; app.classList.add('catalog-mode','open'); render(search.value);});
+window.vektolab.onAssistantBlur(()=>{if(catalogMode){catalogMode=false; app.classList.remove('catalog-mode','open'); window.vektolab.closeCatalog();}else closePanel();});
 if(checkUpdatesButton){checkUpdatesButton.addEventListener('click',()=>{checkUpdatesButton.disabled=true;window.vektolab.checkUpdates();window.vektolab.syncContent();setTimeout(()=>checkUpdatesButton.disabled=false,2500);});}
 window.vektolab.onAppVersion(v=>{if(versionLabel) versionLabel.textContent='v'+v;});
-avatar.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();app.classList.contains('open')?closePanel():openPanel()});
+avatar.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();});
 document.getElementById('close').addEventListener('click',closePanel);
-document.getElementById('explore').addEventListener('click',()=>{search.value='';render();search.focus()});
+document.getElementById('explore').addEventListener('click',()=>{window.vektolab.openCatalog();});
+tabGenerators.addEventListener('click',()=>selectTab('generators')); tabDesigns.addEventListener('click',()=>selectTab('designs'));
 search.addEventListener('input',()=>render(search.value));
 document.getElementById('site').addEventListener('click',()=>window.vektolab.openSite());
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
 window.vektolab.onUpdateState(showUpdate); window.vektolab.onContentState(showContentUpdate);
-window.vektolab.getUpdateState(); window.vektolab.getContentState(); window.vektolab.getGenerators(); render();
+window.vektolab.getUpdateState(); window.vektolab.getContentState(); window.vektolab.getGenerators(); window.vektolab.getDesigns(); render();

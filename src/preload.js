@@ -2,7 +2,15 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('vektolab', {
   openGenerator: slug => ipcRenderer.send('open-generator', slug),
+  openDesign: slug => ipcRenderer.send('open-design', slug),
+  openCatalog: () => ipcRenderer.send('open-catalog'),
+  closeCatalog: () => ipcRenderer.send('close-catalog'),
+  closeGeneratorView: () => ipcRenderer.send('close-generator-view'),
   openSite: () => ipcRenderer.send('open-site'),
+  setPanelOpen: open => ipcRenderer.send('set-panel-open', !!open),
+  startAvatarDrag: (x, y) => ipcRenderer.send('avatar-drag-start', { x, y }),
+  moveAvatarDrag: (x, y, vx, vy) => ipcRenderer.send('avatar-drag-move', { x, y, vx, vy }),
+  endAvatarDrag: (vx, vy) => ipcRenderer.send('avatar-drag-end', { vx, vy }),
   quit: () => ipcRenderer.send('quit-app'),
   checkUpdates: () => ipcRenderer.send('check-updates'),
   syncContent: () => ipcRenderer.send('sync-content'),
@@ -13,6 +21,11 @@ contextBridge.exposeInMainWorld('vektolab', {
   onContentState: callback => ipcRenderer.on('content-state', (_event, state) => callback(state)),
   getGenerators: () => ipcRenderer.send('get-generators'),
   onGenerators: callback => ipcRenderer.on('generators', (_event, list) => callback(list)),
+  getDesigns: () => ipcRenderer.send('get-designs'),
+  onDesigns: callback => ipcRenderer.on('designs', (_event, list) => callback(list)),
+  onCatalogMode: callback => ipcRenderer.on('catalog-mode', callback),
+  onAssistantBlur: callback => ipcRenderer.on('assistant-blur', callback),
+  onGeneratorView: callback => ipcRenderer.on('generator-view', (_event, data) => callback(data)),
   getAppVersion: () => ipcRenderer.send('get-app-version'),
   onAppVersion: callback => ipcRenderer.on('app-version', (_event, version) => callback(version))
 });

@@ -6,14 +6,54 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vekto</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent;font-family:Segoe UI,Arial,sans-serif;color:#111827}#app{width:100%;height:100%;position:relative}.avatar-wrap{position:absolute;right:10px;bottom:8px;width:74px;height:74px;border-radius:50%;cursor:pointer;filter:drop-shadow(0 8px 18px rgba(0,0,0,.16));z-index:3}.avatar-wrap img{width:100%;height:100%;display:block}.panel{position:absolute;right:10px;bottom:88px;width:390px;max-height:585px;background:rgba(255,255,255,.98);border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.18);padding:16px;opacity:0;transform:translateY(10px) scale(.98);pointer-events:none;transition:.18s ease;overflow:hidden}.open .panel{opacity:1;transform:none;pointer-events:auto}.header{display:flex;align-items:center;gap:10px;margin-bottom:13px}.brand-face{width:42px;height:42px;border-radius:13px;overflow:hidden;background:#f5c518}.brand-face img{width:100%;height:100%;object-fit:cover}.title{font-size:16px;font-weight:800}.sub{font-size:11px;color:#6b7280;margin-top:2px}.close{margin-left:auto;width:30px;height:30px;border:0;border-radius:50%;background:#f3f4f6;color:#4b5563;font-size:20px;cursor:pointer}.search{width:100%;height:43px;border:1px solid #e2e5ea;border-radius:12px;background:#f8f9fb;padding:0 13px;outline:none;font-size:13px}.search:focus{border-color:#c9cdd5;box-shadow:0 0 0 3px rgba(245,197,24,.16)}.section{display:flex;justify-content:space-between;align-items:center;margin:15px 2px 9px;font-size:12px;font-weight:800}.section .link{color:#6b7280;cursor:pointer;font-weight:600}.designs{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:350px;overflow:auto;padding-right:2px}.card{font:inherit;text-align:left;color:inherit;padding:0;width:100%;border:1px solid #e5e7eb;background:#fff;border-radius:13px;overflow:hidden;cursor:pointer;transition:.15s}.card:hover{border-color:#c8cbd1;transform:translateY(-1px);box-shadow:0 5px 15px rgba(0,0,0,.06)}.thumb{height:92px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}.thumb img{width:100%;height:100%;object-fit:cover}.name{display:block;padding:8px 9px 10px;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty{grid-column:1/-1;text-align:center;padding:25px 10px;color:#6b7280;font-size:12px}.status{min-height:22px;margin-top:8px;font-size:10px;color:#6b7280}.status:not(:empty){padding:7px 9px;border-radius:10px;background:#fff8d8;border:1px solid #f0df8b}.update{min-height:22px;margin-top:5px;font-size:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}.update:not(:empty){padding:7px 9px;border-radius:10px;background:#f8f9fb;border:1px solid #e5e7eb}.update button{border:0;border-radius:8px;background:#111827;color:#fff;padding:6px 9px;font-size:10px;cursor:pointer}.progress{height:5px;flex:1;max-width:110px;border-radius:99px;background:#e5e7eb;overflow:hidden}.progress i{display:block;height:100%;background:#111827;border-radius:99px}.check{width:100%;margin-top:7px;height:34px;border:1px solid #e2e5ea;border-radius:10px;background:#f8f9fb;color:#111827;font-size:11px;font-weight:650;cursor:pointer}.check:hover{background:#f1f2f4}.footer{display:flex;justify-content:space-between;margin-top:10px;color:#6b7280;font-size:10px}.footer .link{cursor:pointer}.version{color:#9ca3af}@media(max-width:520px){.panel{width:calc(100vw - 20px)}}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;font-family:Segoe UI,Arial,sans-serif;color:#111827}
+body{overflow:hidden}
+#app{width:100%;height:100%;position:relative}
+.avatar-wrap{position:absolute;right:8px;bottom:8px;width:74px;height:74px;border-radius:50%;cursor:grab;filter:drop-shadow(0 8px 18px rgba(0,0,0,.16));z-index:5;transform-origin:50% 78%;touch-action:none;user-select:none;transition:filter .12s ease}.avatar-wrap.dragging{cursor:grabbing;filter:drop-shadow(0 13px 24px rgba(0,0,0,.22))}.avatar-wrap img{width:100%;height:100%;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+
+.panel{position:absolute;right:10px;bottom:88px;width:390px;max-height:585px;background:rgba(255,255,255,.98);border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.18);padding:16px;opacity:0;transform:translateY(10px) scale(.98);pointer-events:none;transition:.18s ease;overflow:hidden}
+.open .panel{opacity:1;transform:none;pointer-events:auto}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+.title{font-size:17px;font-weight:800;line-height:1.1}
+.sub{font-size:11px;color:#6b7280;margin-top:3px}
+.close{margin-left:auto;width:30px;height:30px;border:0;border-radius:50%;background:#f3f4f6;color:#4b5563;font-size:20px;cursor:pointer;flex:0 0 auto}
+.search{width:100%;height:43px;border:1px solid #e2e5ea;border-radius:12px;background:#f8f9fb;padding:0 13px;outline:none;font-size:13px}
+.search:focus{border-color:#c9cdd5;box-shadow:0 0 0 3px rgba(245,197,24,.16)}
+.tabs{display:flex;gap:7px;align-items:center;margin:15px 2px 9px}
+.tab{border:0;background:transparent;color:#6b7280;font:inherit;font-size:12px;font-weight:800;padding:7px 9px;border-radius:9px;cursor:pointer}
+.tab.active{background:#f4f5f7;color:#111827}
+.all-link{margin-left:auto;color:#6b7280;font-size:11px;font-weight:650;cursor:pointer;padding:6px 5px}
+.designs{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:350px;overflow:auto;padding:1px 2px 4px 1px}
+.card{font:inherit;text-align:left;color:inherit;padding:0;width:100%;border:1px solid #e5e7eb;background:#fff;border-radius:13px;overflow:hidden;cursor:pointer;transition:.15s}
+.card:hover{border-color:#c8cbd1;transform:translateY(-1px);box-shadow:0 5px 15px rgba(0,0,0,.06)}
+.thumb{height:92px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.name{display:block;padding:8px 9px 10px;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{grid-column:1/-1;text-align:center;padding:30px 10px;color:#6b7280;font-size:12px}
+.toast-stack{position:absolute;left:0;right:0;bottom:8px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{position:relative;min-height:36px;margin:0 0 0 0;padding:9px 34px 9px 11px;border-radius:11px;background:#fff8d8;border:1px solid #f0df8b;box-shadow:0 8px 25px rgba(0,0,0,.08);font-size:10px;color:#374151;pointer-events:auto;animation:toastIn .16s ease}
+.toast.update-toast{background:#f8f9fb;border-color:#e5e7eb}
+.toast .toast-close{position:absolute;right:7px;top:6px;width:24px;height:24px;border:0;border-radius:7px;background:transparent;color:#6b7280;font-size:16px;cursor:pointer}
+.toast .progress{height:4px;margin-top:7px;border-radius:99px;background:#e5e7eb;overflow:hidden}
+.toast .progress i{display:block;height:100%;background:#111827;border-radius:99px}
+@keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.check{width:100%;margin-top:9px;height:34px;border:1px solid #e2e5ea;border-radius:10px;background:#f8f9fb;color:#111827;font-size:11px;font-weight:650;cursor:pointer}
+.check:hover{background:#f1f2f4}.check:disabled{opacity:.6;cursor:default}
+.footer{display:flex;justify-content:space-between;margin-top:10px;color:#6b7280;font-size:10px}.footer .link{cursor:pointer}.version{color:#9ca3af}
+.catalog-mode .panel{width:600px;max-height:750px;bottom:10px;padding:18px;border-radius:24px}
+.catalog-mode .designs{max-height:555px;display:block;overflow:auto}.catalog-group{margin-bottom:18px}.catalog-title{font-size:12px;font-weight:800;margin:4px 2px 8px}.catalog-title span{font-size:10px;color:#9ca3af;font-weight:600;margin-left:4px}.catalog-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.catalog-mode .thumb{height:135px}.catalog-mode .name{font-size:12px;padding:9px 10px 11px}.catalog-mode .avatar-wrap{width:68px;height:68px}
+.catalog-mode .close{display:none}
+@media(max-width:720px){.catalog-mode .panel{width:calc(100vw - 20px)}}
 </style>
 </head>
 <body><div id="app"><div class="panel" id="panel">
-<div class="header"><div class="brand-face"><img src="assets/vekto-face.gif" alt="Vekto"></div><div><div class="title">Vekto</div><div class="sub">Tu asistente creativo de Vektolab</div></div><button class="close" id="close">×</button></div>
+<div class="header"><div><div class="title">Vekto</div><div class="sub">Tu asistente creativo de Vektolab</div></div><button class="close" id="close" aria-label="Cerrar">×</button></div>
 <input id="search" class="search" placeholder="Buscar generadores..." autocomplete="off">
-<div class="section"><span>Generadores</span><span class="link" id="explore">Ver todos</span></div><div class="designs" id="designs"></div>
-<div class="status" id="contentUpdate"></div><div class="update" id="update"></div><button class="check" id="checkUpdates">↻ Buscar actualizaciones</button>
-<div class="footer"><span class="link" id="site">Abrir Vektolab.com</span><span class="version" id="versionLabel">v0.6.1</span></div>
+<div class="tabs"><button class="tab active" id="tabGenerators" type="button">Generadores</button><button class="tab" id="tabDesigns" type="button">Diseños</button><span class="all-link" id="explore">Ver todos</span></div>
+<div class="designs" id="designs"></div>
+<div class="toast-stack" id="toastStack"></div>
+<button class="check" id="checkUpdates">↻ Buscar actualizaciones</button>
+<div class="footer"><span class="link" id="site">Abrir Vektolab.com</span><span class="version" id="versionLabel">v0.6.4</span></div>
 </div><div class="avatar-wrap" id="avatar"><img src="assets/vekto-face.gif" alt="Vekto"></div></div>
 <script src="assistant.js"></script></body></html>
