@@ -1,0 +1,48 @@
+name: Publicar Vektolab Assistant
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Comprobar versión
+        shell: pwsh
+        run: |
+          $pkg = Get-Content package.json | ConvertFrom-Json
+          $tag = "${{ github.ref_name }}"
+          if ("v$($pkg.version)" -ne $tag) {
+            throw "El tag $tag no coincide con package.json ($($pkg.version))."
+          }
+
+      - name: Compilar instaladores Windows
+        run: npm run dist -- --publish never
+
+      - name: Crear GitHub Release y subir instaladores
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release/*.exe
+            release/*.yml
+            release/*.blockmap
