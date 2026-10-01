@@ -47,3 +47,9 @@ function finish(e){
 window.addEventListener('pointerup',finish);
 window.addEventListener('pointercancel',finish);
 window.vektolab.onAvatarEdgeBounce(hit);
+
+avatar.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!dragging) window.vektolab.showAvatarMenu();
+});

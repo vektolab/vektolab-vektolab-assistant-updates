@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, shell, Tray, Menu, nativeImage, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, shell, Tray, Menu, nativeImage, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const fs = require('fs');
@@ -317,6 +317,30 @@ function createPanelWindow(mode='home'){
   return panelWindow;
 }
 
+
+function showAvatarMenu() {
+  if (!assistantWindow || assistantWindow.isDestroyed()) return;
+  const menu = Menu.buildFromTemplate([
+    { label: 'Abrir Vekto', click: () => {
+      if (panelWindow && !panelWindow.isDestroyed()) {
+        panelWindow.show();
+        panelWindow.focus();
+      } else {
+        togglePanel();
+      }
+    }},
+    { label: 'Buscar actualizaciones', click: () => {
+      checkForUpdates();
+      syncContent();
+    }},
+    { type: 'separator' },
+    { label: 'Abrir Vektolab.com', click: () => shell.openExternal('https://vektolab.com') },
+    { type: 'separator' },
+    { label: 'Salir de Vekto', click: () => { isQuitting = true; app.quit(); } }
+  ]);
+  menu.popup({ window: assistantWindow });
+}
+
 function createAssistant() {
   assistantWindow = new BrowserWindow({
     width:AVATAR_SIZE[0],height:AVATAR_SIZE[1],frame:false,transparent:true,resizable:false,movable:false,
@@ -324,8 +348,6 @@ function createAssistant() {
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   assistantWindow.setAlwaysOnTop(true,'floating');
-  // El avatar no roba el foco al panel: así el panel no se cierra al tocar Vekto.
-  if (process.platform === 'win32') assistantWindow.setFocusable(false);
   assistantWindow.loadFile(path.join(__dirname,'avatar.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{positionAvatar();assistantWindow.showInactive();});
   assistantWindow.on('closed',()=>assistantWindow=null);
@@ -464,6 +486,7 @@ app.whenReady().then(() => {
   ipcMain.on('close-generator-view', () => closeGeneratorView());
   ipcMain.on('open-site', () => shell.openExternal('https://vektolab.com'));
   ipcMain.on('toggle-panel', () => togglePanel());
+  ipcMain.on('show-avatar-menu', () => showAvatarMenu());
   ipcMain.on('close-panel', () => closePanelWindow());
   ipcMain.on('avatar-drag-start', (_event, data) => beginAvatarDrag(data?.x || 0, data?.y || 0));
   ipcMain.on('avatar-drag-move', (_event, data) => moveAvatarDrag(data?.x || 0, data?.y || 0));
@@ -486,6 +509,15 @@ app.whenReady().then(() => {
   };
   createTray();
   createAssistant();
+
+  // Atajo de emergencia para abrir/cerrar el panel aunque el clic del avatar falle.
+  globalShortcut.unregisterAll();
+  globalShortcut.register('CommandOrControl+Shift+V', () => {
+    if (assistantWindow && !assistantWindow.isDestroyed()) {
+      assistantWindow.showInactive();
+      togglePanel();
+    }
+  });
   contentUpdater.ensureSeeded().then(() => { sendGenerators(); sendDesigns(); syncContent(); });
 
   screen.on('display-metrics-changed', () => { if (assistantWindow && !assistantWindow.isDestroyed()) { const c=loadSavedAvatarCenter(); const area=screen.getDisplayNearestPoint(c).workArea; const x=Math.max(area.x,Math.min(c.x,area.x+area.width)); const y=Math.max(area.y,Math.min(c.y,area.y+area.height)); assistantWindow.setPosition(Math.round(x-45),Math.round(y-45),false); } });
@@ -496,5 +528,5 @@ app.whenReady().then(() => {
   setInterval(syncContent, CONTENT_CHECK_MINUTES * 60 * 1000);
 });
 
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => { isQuitting = true; globalShortcut.unregisterAll(); });
 app.on('window-all-closed', event => event.preventDefault());
