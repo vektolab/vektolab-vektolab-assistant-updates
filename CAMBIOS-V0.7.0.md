@@ -1,4 +1,4 @@
-# Vekto v0.7.0
+# Vekto v0.7.1
 
 Corrección del clic del avatar y apertura del panel principal.
 

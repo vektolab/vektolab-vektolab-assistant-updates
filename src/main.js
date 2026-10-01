@@ -299,6 +299,7 @@ function createPanelWindow(mode='home'){
   const size=mode==='catalog'?CATALOG_SIZE:mode==='generator'?GENERATOR_SIZE:PANEL_SIZE;
   panelWindow=new BrowserWindow({
     width:size[0],height:size[1],frame:false,transparent:true,resizable:false,movable:false,
+    parent: assistantWindow, modal:false,
     alwaysOnTop:true,skipTaskbar:true,show:false,hasShadow:false,backgroundColor:'#00000000',
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
