@@ -1,5 +1,5 @@
 {
-  "contentVersion": "2026-10-01T13:43:01.114Z",
+  "schemaVersion": 1,
   "files": [
     {
       "path": "content/asistente.js",
@@ -87,7 +87,7 @@
     },
     {
       "path": "content/index.html",
-      "sha256": "4979b527bec7a1e903a706ae7b9b5680ad7159a1c15302966cf5ffa8f9634bbf"
+      "sha256": "88c01d75aa528ae890bfd93fcc53308fcd34299cb84f456cdfb07f13db851a0f"
     },
     {
       "path": "content/logo.png",

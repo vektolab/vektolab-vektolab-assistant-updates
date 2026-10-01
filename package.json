@@ -1,6 +1,6 @@
 {
   "name": "vektolab-assistant",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Vekto - asistente de escritorio de Vektolab",
   "main": "src/main.js",
   "author": "Vektolab",
@@ -23,7 +23,7 @@
     "asar": true,
     "files": [
       "src/**/*",
-      "web/**/*",
+      "src/assets/**/*",
       "content/**/*",
       "package.json"
     ],
@@ -63,13 +63,13 @@
       {
         "provider": "github",
         "owner": "vektolab",
-        "repo": "vektolab-assistant-updates",
+        "repo": "vektolab-vektolab-assistant-updates",
         "releaseType": "release"
       }
     ]
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vektolab/vektolab-assistant-updates.git"
+    "url": "https://github.com/vektolab/vektolab-vektolab-assistant-updates.git"
   }
 }

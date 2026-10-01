@@ -1,4 +1,4 @@
-# Vekto — Vektolab Assistant 0.6.0
+# Vekto — Vektolab Assistant 0.6.1
 
 Vekto es el asistente de escritorio de Vektolab. Queda disponible junto al escritorio, muestra los generadores y puede sincronizar nuevos generadores/archivos desde GitHub sin reinstalar la aplicación.
 
@@ -32,7 +32,7 @@ El instalador se genera en `release/`.
 ## GitHub
 
 Repositorio configurado:
-`https://github.com/vektolab/vektolab-assistant-updates`
+`https://github.com/vektolab/vektolab-vektolab-assistant-updates`
 
 ### Cambiar/agregar un generador
 

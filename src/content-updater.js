@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const https = require('https');
 
 const OWNER = 'vektolab';
-const REPO = 'vektolab-assistant-updates';
+const REPO = 'vektolab-vektolab-assistant-updates';
 const BRANCH = 'main';
 const MANIFEST_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/content/manifest.json`;
 

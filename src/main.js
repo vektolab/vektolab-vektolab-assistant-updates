@@ -222,7 +222,7 @@ function configureStartup() {
 
 function createTray() {
   if (tray) return;
-  const iconPath = path.join(__dirname, '..', 'web', 'icon-192.png');
+  const iconPath = path.join(__dirname, 'assets', 'icon-192.png');
   let icon = nativeImage.createFromPath(iconPath);
   if (icon.isEmpty()) icon = nativeImage.createEmpty();
   tray = new Tray(icon);

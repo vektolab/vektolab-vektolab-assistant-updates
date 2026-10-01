@@ -4,7 +4,7 @@
 
 Sube esta carpeta a GitHub como:
 
-`vektolab/vektolab-assistant-updates`
+`vektolab/vektolab-vektolab-assistant-updates`
 
 El repositorio debe ser público para que `electron-updater` pueda consultar las Releases sin autenticación.
 
