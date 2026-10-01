@@ -28,7 +28,8 @@ function showContentUpdate(state){
  else if(state?.status==='downloading') contentUpdate.textContent=`Actualizando generadores… ${state.percent||0}%`;
  else if(state?.status==='updated') contentUpdate.textContent=`✓ Generadores actualizados (${state.updated||0} archivos)`;
  else if(state?.status==='up-to-date') contentUpdate.textContent='✓ Generadores actualizados';
- else if(state?.status==='error') contentUpdate.textContent='⚠ No se pudieron actualizar los generadores';
+ else if(state?.status==='offline') contentUpdate.textContent='✓ Generadores disponibles. No se pudo comprobar si hay cambios ahora.';
+ else if(state?.status==='error') contentUpdate.textContent='⚠ No se pudieron cargar los generadores';
  else contentUpdate.textContent='';
 }
 window.vektolab.onGenerators(list=>{items=Array.isArray(list)?list:[]; render(search.value);});

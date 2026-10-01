@@ -172,6 +172,8 @@ function createAssistant() {
     assistantWindow.showInactive();
     assistantWindow.webContents.send('update-state', updateState);
     assistantWindow.webContents.send('app-version', app.getVersion());
+    sendGenerators();
+    if (contentUpdater) assistantWindow.webContents.send('content-state', contentUpdater.getState());
   });
   assistantWindow.on('closed', () => assistantWindow = null);
 }
