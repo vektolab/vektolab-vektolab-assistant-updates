@@ -121,13 +121,25 @@ function sendDesigns(){
 }
 
 function getPositionFile(){return path.join(app.getPath('userData'),POSITION_FILE);}
+function clampAvatarPosition(x,y){
+  const [w,h]=AVATAR_SIZE;
+  const area=screen.getDisplayNearestPoint({x:Math.round(x+w/2),y:Math.round(y+h/2)}).workArea;
+  return {
+    x:Math.max(area.x,Math.min(Math.round(x),area.x+area.width-w)),
+    y:Math.max(area.y,Math.min(Math.round(y),area.y+area.height-h))
+  };
+}
 function loadSavedAvatarCenter(){
+  const [w,h]=AVATAR_SIZE;
   try{
     const d=JSON.parse(fs.readFileSync(getPositionFile(),'utf8'));
-    if(Number.isFinite(d.x)&&Number.isFinite(d.y))return{x:d.x,y:d.y};
+    if(Number.isFinite(d.x)&&Number.isFinite(d.y)){
+      const p=clampAvatarPosition(d.x-w/2,d.y-h/2);
+      return{x:p.x+w/2,y:p.y+h/2};
+    }
   }catch(_){}
   const a=screen.getPrimaryDisplay().workArea;
-  return{x:Math.round(a.x+a.width-55),y:Math.round(a.y+a.height-55)};
+  return{x:Math.round(a.x+a.width-w/2-8),y:Math.round(a.y+a.height-h/2-8)};
 }
 function saveAvatarCenter(c){
   try{fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(c.x),y:Math.round(c.y)}));}catch(_){}
@@ -176,14 +188,16 @@ function startAvatarPhysics(vx,vy){
     let bounced=false;
     let direction=null;
 
-    if(pos[0]<=area.x){
+    // Los límites físicos son siempre el área visible de Windows,
+    // excluyendo la barra de tareas. El avatar nunca puede quedar fuera.
+    if(pos[0]<area.x){
       pos[0]=area.x; velocityX=Math.abs(velocityX)*0.72; bounced=true; direction='left';
-    }else if(pos[0]+w>=area.x+area.width){
+    }else if(pos[0]>area.x+area.width-w){
       pos[0]=area.x+area.width-w; velocityX=-Math.abs(velocityX)*0.72; bounced=true; direction='right';
     }
-    if(pos[1]<=area.y){
+    if(pos[1]<area.y){
       pos[1]=area.y; velocityY=Math.abs(velocityY)*0.72; bounced=true; direction=direction||'top';
-    }else if(pos[1]+h>=area.y+area.height){
+    }else if(pos[1]>area.y+area.height-h){
       pos[1]=area.y+area.height-h; velocityY=-Math.abs(velocityY)*0.72; bounced=true; direction=direction||'bottom';
     }
 
@@ -198,9 +212,9 @@ function startAvatarPhysics(vx,vy){
     }
   },16);
 }
-function resizeForState(open,mode='home'){
+function resizeForState(open,mode='home',centerOverride=null){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const c=avatarCenter();
+  const c=centerOverride || avatarCenter();
   if(open){
     panelMode=mode;
     const [w,h]=mode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
@@ -215,17 +229,21 @@ function resizeForState(open,mode='home'){
   }else{
     panelMode='home';
     assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
-    assistantWindow.setPosition(Math.round(c.x-45),Math.round(c.y-45),false);
+    const safe=clampAvatarPosition(c.x-AVATAR_SIZE[0]/2,c.y-AVATAR_SIZE[1]/2);
+    assistantWindow.setPosition(safe.x,safe.y,false);
   }
 }
 function setPanelOpen(open){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
+  // Capturamos la posición REAL del avatar antes de cambiar el tamaño de la ventana.
+  // Esto evita perderla al pasar de 90x90 a la ventana del menú y volver.
+  const c=avatarCenter();
   panelOpen=!!open;
   if(panelOpen){
-    resizeForState(true,'home');
+    resizeForState(true,'home',c);
     assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
   }else{
-    resizeForState(false);
+    resizeForState(false,'home',c);
     assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
   }
@@ -244,10 +262,13 @@ function moveAvatarDrag(x,y){
   // Si el usuario realmente arrastra con el menú abierto, primero lo minimizamos
   // manteniendo el avatar exactamente debajo del cursor. Un simple clic no lo mueve.
   if(panelOpen && dragMoved){
+    // Guardamos la posición del avatar mientras todavía estamos en modo menú.
+    // Después de cerrar el menú la ventana cambia de tamaño y no debemos recalcular
+    // la posición usando las coordenadas de la ventana grande.
+    const c=avatarCenter();
     setPanelOpen(false);
-    const [cx,cy]=avatarCenter();
-    dragState.startX=Math.round(cx-AVATAR_SIZE[0]/2);
-    dragState.startY=Math.round(cy-AVATAR_SIZE[1]/2);
+    dragState.startX=Math.round(c.x-AVATAR_SIZE[0]/2);
+    dragState.startY=Math.round(c.y-AVATAR_SIZE[1]/2);
     dragState.pointerX=x;
     dragState.pointerY=y;
   }
