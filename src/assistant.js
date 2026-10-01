@@ -71,9 +71,21 @@ let lastPointer=null;
 let wasPanelOpenAtDragStart=false;
 let lastPointerTime=0;
 let dragMoved=false;
+let lastVelocityX=0;
+let lastVelocityY=0;
 
 function clampVelocity(value){
  return Math.max(-2200, Math.min(2200, value));
+}
+
+function edgeBounce(direction){
+ avatar.classList.remove('edge-hit');
+ // Force a new animation even when the user is holding the mouse.
+ void avatar.offsetWidth;
+ avatar.classList.add('edge-hit');
+ setTimeout(()=>avatar.classList.remove('edge-hit'),260);
+ if(direction==='left') avatar.style.setProperty('--tilt','-10deg');
+ if(direction==='right') avatar.style.setProperty('--tilt','10deg');
 }
 
 avatar.addEventListener('pointerdown', e=>{
@@ -81,15 +93,14 @@ avatar.addEventListener('pointerdown', e=>{
  e.preventDefault();
  e.stopPropagation();
 
- // Si el panel está abierto y se empieza a arrastrar, se convierte en el avatar.
- if(app.classList.contains('open')){
-   closePanel();
- }
-
  wasPanelOpenAtDragStart=app.classList.contains('open');
+ if(wasPanelOpenAtDragStart) closePanel();
+
  avatarDragging=true;
  dragPointerId=e.pointerId;
  dragMoved=false;
+ lastVelocityX=0;
+ lastVelocityY=0;
  lastPointer={x:e.screenX,y:e.screenY};
  lastPointerTime=performance.now();
  avatar.classList.add('dragging');
@@ -110,8 +121,11 @@ window.addEventListener('pointermove', e=>{
 
  const vx=clampVelocity(dx/(dt/1000));
  const vy=clampVelocity(dy/(dt/1000));
+ lastVelocityX=vx;
+ lastVelocityY=vy;
+
  const tilt=Math.max(-16,Math.min(16,vx*0.012+dy*0.01));
- avatar.style.transform=`rotate(${tilt.toFixed(2)}deg)`;
+ avatar.style.setProperty('--tilt',`${tilt.toFixed(2)}deg`);
 
  window.vektolab.moveAvatarDrag(e.screenX,e.screenY,vx,vy);
 
@@ -121,24 +135,37 @@ window.addEventListener('pointermove', e=>{
 
 function finishAvatarDrag(e){
  if(!avatarDragging || e.pointerId!==dragPointerId) return;
+
  const now=performance.now();
  const dt=Math.max(1,now-lastPointerTime);
- const vx=clampVelocity((e.screenX-lastPointer.x)/(dt/1000));
- const vy=clampVelocity((e.screenY-lastPointer.y)/(dt/1000));
+ const releaseVx=clampVelocity((e.screenX-lastPointer.x)/(dt/1000));
+ const releaseVy=clampVelocity((e.screenY-lastPointer.y)/(dt/1000));
+
+ const vx=Math.abs(releaseVx)>120 ? releaseVx : lastVelocityX;
+ const vy=Math.abs(releaseVy)>120 ? releaseVy : lastVelocityY;
 
  avatarDragging=false;
  dragPointerId=null;
  avatar.classList.remove('dragging');
- avatar.style.transform='';
+ avatar.classList.remove('edge-hit');
+ avatar.style.removeProperty('--tilt');
+
  window.vektolab.endAvatarDrag(vx,vy);
 
- // A click without movement still opens/closes Vekto.
  if(!dragMoved){
    wasPanelOpenAtDragStart ? closePanel() : openPanel();
  }
 }
 window.addEventListener('pointerup',finishAvatarDrag);
 window.addEventListener('pointercancel',finishAvatarDrag);
+
+window.vektolab.onPanelPlacement(placement=>{
+ panel.classList.toggle('below', placement==='below');
+});
+window.vektolab.onAvatarEdgeBounce(direction=>{
+ edgeBounce(direction);
+});
+
 
 window.vektolab.onGenerators(list=>{items=Array.isArray(list)?list:[]; render(search.value);});
 window.vektolab.onDesigns(list=>{staticDesigns=Array.isArray(list)?list:[]; if(activeTab==='designs') render(search.value);});

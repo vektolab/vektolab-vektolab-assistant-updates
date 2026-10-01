@@ -27,5 +27,7 @@ contextBridge.exposeInMainWorld('vektolab', {
   onAssistantBlur: callback => ipcRenderer.on('assistant-blur', callback),
   onGeneratorView: callback => ipcRenderer.on('generator-view', (_event, data) => callback(data)),
   getAppVersion: () => ipcRenderer.send('get-app-version'),
-  onAppVersion: callback => ipcRenderer.on('app-version', (_event, version) => callback(version))
+  onAppVersion: callback => ipcRenderer.on('app-version', (_event, version) => callback(version)),
+  onPanelPlacement: callback => ipcRenderer.on('panel-placement', (_event, placement) => callback(placement)),
+  onAvatarEdgeBounce: callback => ipcRenderer.on('avatar-edge-bounce', (_event, direction) => callback(direction))
 });
