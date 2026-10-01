@@ -40,8 +40,11 @@ html,body{margin:0;width:100%;height:100%;background:transparent;font-family:Seg
 .footer .link{cursor:pointer}.version{color:#9ca3af}
 .avatar-wrap{position:absolute;right:9px;bottom:7px;width:78px;height:78px;border-radius:50%;cursor:grab;z-index:20;filter:drop-shadow(0 8px 18px rgba(0,0,0,.18));touch-action:none;user-select:none}
 .avatar-wrap img{width:100%;height:100%;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
-.avatar-wrap.dragging{cursor:grabbing;animation:vektoSway .55s ease-in-out infinite alternate}.avatar-wrap.edge-hit{animation:vektoEdgeHit .24s ease-out}.avatar-wrap.dragging.edge-hit{animation:vektoEdgeHit .24s ease-out}
-@keyframes vektoSway{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}@keyframes vektoEdgeHit{0%{transform:scale(1) rotate(var(--tilt,0deg))}35%{transform:scale(.88) rotate(calc(var(--tilt,0deg) - 8deg))}70%{transform:scale(1.05) rotate(calc(var(--tilt,0deg) + 5deg))}100%{transform:scale(1) rotate(var(--tilt,0deg))}}
+.avatar-wrap.dragging{cursor:grabbing;animation:vektoSway .55s ease-in-out infinite alternate}
+.avatar-wrap.edge-hit{animation:vektoEdgeHit .24s ease-out}
+.avatar-wrap.dragging.edge-hit{animation:vektoEdgeHit .24s ease-out}
+@keyframes vektoSway{from{transform:rotate(calc(var(--tilt,0deg) - 4deg))}to{transform:rotate(calc(var(--tilt,0deg) + 4deg))}}
+@keyframes vektoEdgeHit{0%{transform:scale(1) rotate(var(--tilt,0deg))}35%{transform:scale(.86) rotate(calc(var(--tilt,0deg) - 8deg))}70%{transform:scale(1.06) rotate(calc(var(--tilt,0deg) + 5deg))}100%{transform:scale(1) rotate(var(--tilt,0deg))}}
 .catalog-mode .panel{width:620px;height:780px;padding:18px;border-radius:24px}
 .catalog-mode .designs{max-height:650px;display:block}
 .catalog-group{margin-bottom:18px}.catalog-title{font-size:12px;font-weight:800;margin:4px 2px 8px}.catalog-title span{font-size:10px;color:#9ca3af;font-weight:600;margin-left:4px}
