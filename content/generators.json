@@ -1,0 +1,12 @@
+{
+  "generators": [
+    {"slug":"cartel-luna","name":"Cartel Luna","file":"generadores/cartel-luna.html","image":"imagenes/cartel-luna.webp"},
+    {"slug":"cortador-galletas","name":"Cortador de galletas","file":"generadores/cortador-galletas.html","image":"imagenes/cortador-galletas.webp"},
+    {"slug":"cuenco-figuras","name":"Cuenco con figuras","file":"generadores/cuenco-figuras.html","image":"imagenes/Figuras-huecas.png"},
+    {"slug":"identificador-lapiz","name":"Identificador de lápiz","file":"generadores/identificador-lapiz.html","image":"imagenes/identificador-lapiz.webp"},
+    {"slug":"letras-huecas","name":"Letras huecas","file":"generadores/letras-huecas.html","image":"imagenes/letras-huecas.webp"},
+    {"slug":"llavero","name":"Llavero","file":"generadores/llavero.html","image":"imagenes/llavero.webp"},
+    {"slug":"placa-nombre-3d","name":"Placa de nombre 3D","file":"generadores/placa-nombre-3d.html","image":"imagenes/placa-nombre-3d.webp"},
+    {"slug":"silueta-2d","name":"Silueta 2D","file":"generadores/silueta-2d.html","image":"imagenes/silueta-2d.webp"}
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "name": "vektolab-assistant",
+  "version": "0.6.0",
+  "description": "Vekto - asistente de escritorio de Vektolab",
+  "main": "src/main.js",
+  "author": "Vektolab",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "dist": "electron-builder --win",
+    "dist:all": "electron-builder --win --mac"
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.vektolab.assistant",
+    "productName": "Vektolab Assistant",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "web/**/*",
+      "content/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Vektolab-Assistant-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Vektolab Assistant",
+      "runAfterFinish": true
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.utilities",
+      "artifactName": "Vektolab-Assistant-${version}-${arch}.${ext}",
+      "hardenedRuntime": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "vektolab",
+        "repo": "vektolab-assistant-updates",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vektolab/vektolab-assistant-updates.git"
+  }
+}

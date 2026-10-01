@@ -1,0 +1,117 @@
+{
+  "contentVersion": "2026-10-01T13:43:01.114Z",
+  "files": [
+    {
+      "path": "content/asistente.js",
+      "sha256": "0a687baac05ef7d4f84792718b993eeeedc02ac7b47c0edab4166f50f268d66a"
+    },
+    {
+      "path": "content/favicon.png",
+      "sha256": "07185923142c476c309bef4c5baec0c8e982d853c14a08c1c69731ab669f4eb9"
+    },
+    {
+      "path": "content/generadores/cartel-luna.html",
+      "sha256": "6e15aa9d605a850f19bfb709977e559f83fbfe44c7292d041ac48d19136a2e11"
+    },
+    {
+      "path": "content/generadores/cortador-galletas.html",
+      "sha256": "694249062638ce91a057a0dcee4d9c265b8e9fde1ce300b81768712c0e20334d"
+    },
+    {
+      "path": "content/generadores/cuenco-figuras.html",
+      "sha256": "d32df6b48289a8c3b715e3cd850b452e5199dd88d8028b9a5a5c8d843b2d8c03"
+    },
+    {
+      "path": "content/generadores/identificador-lapiz.html",
+      "sha256": "f5e696e277147ee715bf836a3a2628b7697b77f852dd298f7cf2240595c20a8e"
+    },
+    {
+      "path": "content/generadores/letras-huecas.html",
+      "sha256": "1e7f728108115755c3f582198df195998961a60d7aee4fca062411e63c940b04"
+    },
+    {
+      "path": "content/generadores/llavero.html",
+      "sha256": "d4836ce5901e6cdc1d229d7fa2921ccad78f7e7f025069d73e2bd1ed3f85c0e6"
+    },
+    {
+      "path": "content/generadores/placa-nombre-3d.html",
+      "sha256": "a5323395b1eaabd80cb020c89318ee5a0a258f56749649c6028c563af55345ba"
+    },
+    {
+      "path": "content/generadores/silueta-2d.html",
+      "sha256": "8720b7c9f6f449db4512234c304242a74fb8372adc92d0f392f690e9e430b62c"
+    },
+    {
+      "path": "content/generators.json",
+      "sha256": "a5fee02dbed5a70bc89a78ae5fc427595fc01db05b2be80bf704f79e04c860cc"
+    },
+    {
+      "path": "content/i18n.js",
+      "sha256": "afc7694d8aaa096f63af647ad37fde146034cdf41a9b66457a2d476f017a645a"
+    },
+    {
+      "path": "content/icon-192.png",
+      "sha256": "76dc81da93e9bd52c18f1e7432548cf6ba76600dd850be5b73ce6d104bda63b8"
+    },
+    {
+      "path": "content/imagenes/cartel-luna.webp",
+      "sha256": "7652c7bbef37f0b18280034e2efe25d623b385facbfc42c45fbca5d9b024f896"
+    },
+    {
+      "path": "content/imagenes/cortador-galletas.webp",
+      "sha256": "848dd278b088326270aca92f8f528517f5b6530f376f8a0056e8e6c7c066d81d"
+    },
+    {
+      "path": "content/imagenes/Figuras-huecas.png",
+      "sha256": "8b2bfa60bf4994c64919c9bc2d3c2b141b7bb07a48d4df4174ca77ca6f24d6dd"
+    },
+    {
+      "path": "content/imagenes/identificador-lapiz.webp",
+      "sha256": "d26d38f405fc6e8f8f54bf244981d19f88ef2538b976a52ef4cbcb8a6d4643d1"
+    },
+    {
+      "path": "content/imagenes/letras-huecas.webp",
+      "sha256": "1b39006dd91e5d1005dcf230949adbc839853d338950c2a04e33575f83a83e82"
+    },
+    {
+      "path": "content/imagenes/llavero.webp",
+      "sha256": "a2e6249a9f9ae69d7305f17dce1714cb8e557f9f7da4509ec5cdf07f3847ae5b"
+    },
+    {
+      "path": "content/imagenes/placa-nombre-3d.webp",
+      "sha256": "8bfff328571603de83ca9af6dd02fb58e4035ebeca544cb8d9f8a8a3ae22252f"
+    },
+    {
+      "path": "content/imagenes/silueta-2d.webp",
+      "sha256": "40517f00a05a470499035b16f43c0a8e2be8576277edcd5151d493bc7f9ac45f"
+    },
+    {
+      "path": "content/index.html",
+      "sha256": "4979b527bec7a1e903a706ae7b9b5680ad7159a1c15302966cf5ffa8f9634bbf"
+    },
+    {
+      "path": "content/logo.png",
+      "sha256": "d2e065eb48b78a7856076af45c6b799657ea3c2e2ef274f603609a5213579679"
+    },
+    {
+      "path": "content/manifest.webmanifest",
+      "sha256": "97d8f92ac29b00b75362954f9dec8801d7fa78631c793c5c0ab2a79759111011"
+    },
+    {
+      "path": "content/patreon-gate.js",
+      "sha256": "8dcba51ca0073c012eade94dbeef70fb9ef753439bb8cbcc0f0899e1998f8062"
+    },
+    {
+      "path": "content/push-config.js",
+      "sha256": "a2ed554258abb57afaebb8c5f85e4a19426609ba25248b6ea15add68bbb434f5"
+    },
+    {
+      "path": "content/store-config.js",
+      "sha256": "51fd0545efb4976e2d78946ac4035698d8686748395b5b3b2a06df693089d454"
+    },
+    {
+      "path": "content/translate.js",
+      "sha256": "f5753ffe59821eaeaadef50796b8ca66066e3ed7ab95e1dbd00d608445b4d74c"
+    }
+  ]
+}

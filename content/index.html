@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="./push-config.js"></script>
+<script src="./store-config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vektolab — Generador 3D</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --yellow: #f5c518;
+  --yellow-hover: #eab308;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 4px 16px rgba(0,0,0,.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body > header { flex-shrink: 0; }
+body > footer { flex-shrink: 0; margin-top: auto; }
+body > .hero,
+body > .section {
+  /* pull content toward vertical center when page is sparse */
+}
+.page-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ========== HEADER ========== */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 32px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+}
+.brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid transparent;
+  transition: background .15s, color .15s;
+}
+.nav-link:hover {
+  background: #f3f4f6;
+  color: var(--text);
+}
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background .15s;
+}
+.icon-btn:hover { background: #f3f4f6; }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.lang-btn svg { width: 14px; height: 14px; }
+
+/* ========== SHARED HEADER CONTROLS ========== */
+.vk-head-actions{display:flex;align-items:center;gap:8px}
+.vk-head-btn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:8px 12px;border-radius:10px;text-decoration:none;color:#66758c;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;border:1px solid #e5e7eb;background:#fff;cursor:pointer;gap:5px;white-space:nowrap}
+.vk-head-btn:hover{background:#f3f4f6;color:#111827}.vk-head-btn.active{background:#f1f3f6;color:#111827}
+.vk-head-btn svg{width:15px;height:15px;flex:none}.vk-head-icon{width:36px;padding:0}
+@media(max-width:700px){.vk-head-actions{gap:5px}.vk-head-btn{height:34px;padding:7px 9px;font-size:11px}.vk-head-icon{width:34px;padding:0}}
+@media(max-width:520px){.vk-head-btn{padding:7px}.vk-head-btn svg{width:13px;height:13px}.vk-head-actions{overflow-x:auto;scrollbar-width:none}.vk-head-actions::-webkit-scrollbar{display:none}}
+
+/* ========== HERO ========== */
+.hero {
+  text-align: center;
+  padding: 28px 32px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.hero h1 {
+  font-size: 84px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 14px;
+  color: var(--text);
+}
+.hero h1 .accent { color: var(--yellow); }
+.hero-sub {
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1.4;
+  margin-bottom: 40px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Search + categories share same max width */
+.hero-controls {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .15s, border-color .15s;
+  margin-bottom: 20px;
+}
+.search-box:focus-within {
+  border-color: #d1d5db;
+  box-shadow: 0 0 0 5px rgba(245,197,24,.18);
+}
+.search-box .icon {
+  padding-left: 28px;
+  color: var(--muted-2);
+  display: flex;
+  flex-shrink: 0;
+}
+.search-box .icon svg { width: 28px; height: 28px; }
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 24px 18px;
+  font-size: 20px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  min-width: 0;
+}
+.search-box input::placeholder { color: var(--muted-2); }
+.btn-search {
+  margin: 10px;
+  padding: 16px 32px;
+  background: var(--yellow);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-search:hover { background: var(--yellow-hover); }
+
+/* Categories — same width as search, no scroll, buttons flex to fit */
+.categories {
+  display: flex;
+  justify-content: stretch;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #111827;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip:hover { background: #f9fafb; border-color: #d1d5db; }
+.chip.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+.chip svg {
+  width: 16px;
+  height: 16px;
+  opacity: .9;
+  flex-shrink: 0;
+}
+.chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip-caret-icon {
+  width: 11px;
+  height: 11px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+.chip-caret-icon.open { transform: rotate(180deg); }
+.subcats-row {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  max-width: 1200px;
+  width: 100%;
+}
+.subchip {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .12s;
+}
+.subchip:hover { background: #f3f4f6; }
+.subchip.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ========== UNIFIED CATALOG ========== */
+.store-status{max-width:1200px;margin:0 auto;padding:0 32px;color:var(--muted);font-size:13px;text-align:center;min-height:0}
+.catalog-more-card{cursor:pointer}
+
+/* Card badges & icons — matching target design */
+.new-badge{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:#111827;color:#fff;font-size:10px;font-weight:700;
+  padding:4px 8px;border-radius:6px;letter-spacing:.2px;
+}
+.new-badge.popular{background:#f5c518;color:#111827}
+.patreon-badge{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:#111827;color:#fff;font-size:10px;font-weight:700;
+  padding:4px 8px;border-radius:6px;letter-spacing:.2px;
+  max-width:calc(100% - 20px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.patreon-badge.with-new{top:40px}
+.heart{
+  /* Ocultos por ahora: no son necesarios en esta etapa del catálogo. */
+  display:none;
+  position:absolute;top:10px;right:10px;z-index:2;
+  width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.92);
+  align-items:center;justify-content:center;
+  font-size:14px;color:#9ca3af;cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  transition:color .15s,background .15s;
+}
+.heart:hover{color:#ef4444;background:#fff}
+
+.card-img{position:relative}
+.card-body{padding:12px 14px 14px}
+.card-name{
+  font-size:13.5px;font-weight:650;margin-bottom:6px;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;
+}
+.card-tag{
+  display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#6b7280;margin-bottom:10px;
+}
+.card-tag svg{width:12px;height:12px;color:var(--yellow);fill:var(--yellow);flex-shrink:0}
+.card-tag-patreon .card-tag-text{
+  color:#111827;font-weight:650;font-size:11.5px;
+}
+
+.card-footer{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
+}
+.price{
+  font-size:14px;font-weight:750;color:var(--text);line-height:1.2;
+}
+.rating{
+  /* Ocultas por ahora: no son necesarias en esta etapa del catálogo. */
+  display:none;
+  align-items:center;gap:3px;margin-top:3px;
+  font-size:11px;font-weight:600;color:#6b7280;
+}
+.rating .star{color:#f5c518;font-size:12px}
+.cart-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--border);
+  background:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#6b7280;flex-shrink:0;transition:background .15s,border-color .15s,color .15s;
+}
+.cart-btn:hover{background:#f9fafb;border-color:#d1d5db;color:var(--text)}
+.cart-btn svg{width:16px;height:16px}
+
+@media(max-width:520px){
+  .store-status{padding:0 16px}
+  .card-body{padding:10px 12px 12px}
+  .price{font-size:13px}
+  .cart-btn{width:32px;height:32px}
+}
+
+/* ========== GRID ========== */
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 32px 40px;
+  width: 100%;
+}
+.section-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  justify-content: center;
+  justify-items: center;
+}
+.grid .card {
+  width: 100%;
+  max-width: 220px;
+}
+/* When few cards, center them as a group */
+.grid:has(> :only-child),
+.grid:has(> :nth-child(2):last-child),
+.grid:has(> :nth-child(3):last-child),
+.grid:has(> :nth-child(4):last-child) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+.grid:has(> :only-child) .card,
+.grid:has(> :only-child) .catalog-more-card,
+.grid:has(> :nth-child(2):last-child) .card,
+.grid:has(> :nth-child(2):last-child) .catalog-more-card,
+.grid:has(> :nth-child(3):last-child) .card,
+.grid:has(> :nth-child(3):last-child) .catalog-more-card,
+.grid:has(> :nth-child(4):last-child) .card,
+.grid:has(> :nth-child(4):last-child) .catalog-more-card {
+  width: 180px;
+  max-width: 180px;
+  flex: 0 0 180px;
+}
+.card {
+  background: #fff !important;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.08);
+}
+
+.card-img img, .modal-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-img {
+  aspect-ratio: 1 / 1;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+/* card-body, card-name, card-tag styles are defined in the UNIFIED CATALOG section above */
+
+.catalog-more-card {
+  width: 100%;
+  max-width: 220px;
+  min-height: 300px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  color: #111;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  text-align: center;
+  padding: 20px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.catalog-more-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  background: #f9fafb;
+}
+.catalog-more-card span {
+  color: #111;
+}
+
+.skeleton-card {
+  width: 100%;
+  max-width: 220px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.skeleton-card .sk-img { aspect-ratio: 1 / 1; }
+.skeleton-card .sk-line { height: 12px; margin: 10px 14px; border-radius: 6px; }
+.skeleton-card .sk-line.short { width: 55%; }
+.skeleton-card .sk-img,
+.skeleton-card .sk-line {
+  background: linear-gradient(90deg, #f0f1f3 25%, #f8f9fa 37%, #f0f1f3 63%);
+  background-size: 400% 100%;
+  animation: sk-pulse 1.4s ease infinite;
+}
+@keyframes sk-pulse {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.card-tag svg {
+  width: 12px;
+  height: 12px;
+  color: var(--yellow);
+  fill: var(--yellow);
+}
+
+footer {
+  text-align: center;
+  padding: 20px 16px 36px;
+  color: var(--muted-2);
+  font-size: 12.5px;
+}
+
+/* ========== MODALS (shared) ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.45);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--panel);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 920px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.18);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 12px;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  font-family: inherit;
+}
+.modal-close:hover { background: #f3f4f6; }
+.modal-body {
+  padding: 0 22px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-search {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 14px;
+  font-family: inherit;
+  background: #f9fafb;
+}
+.modal-search:focus { border-color: #d1d5db; background: #fff; }
+.modal-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.modal-chip {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .12s;
+}
+.modal-chip:hover { background: #f3f4f6; }
+.modal-chip.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+.modal-chip-caret-icon {
+  width: 10px;
+  height: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: transform .15s;
+}
+.modal-chip-caret-icon.open { transform: rotate(180deg); }
+.modal-subcats {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -10px 0 18px;
+}
+.modal-subchip {
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .12s;
+}
+.modal-subchip:hover { background: #f3f4f6; }
+.modal-subchip.active { background: var(--text); color: #fff; border-color: var(--text); }
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.modal-card {
+  background: #fff !important;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  filter: none !important;
+  transition: transform .12s, border-color .12s;
+}
+.modal-card:hover {
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: none !important;
+}
+.modal-card-img {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  background: #fff !important;
+  overflow: hidden;
+}
+.modal-card-info {
+  background: #fff;
+  padding: 10px 12px 12px;
+}
+.modal-card-name {
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+.modal-card-cat {
+  font-size: 10.5px;
+  color: var(--muted-2);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  font-weight: 600;
+}
+
+/* Language modal — large centered panel */
+.lang-modal .modal {
+  max-width: 480px;
+}
+.lang-list-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.lang-opt-modal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text);
+  font-family: inherit;
+  transition: background .12s;
+}
+.lang-opt-modal:hover, .lang-opt-modal.active {
+  background: #f3f4f6;
+}
+.lang-opt-modal .flag { font-size: 20px; }
+.lang-opt-modal.hidden { display: none; }
+
+/* Contact modal */
+.contact-modal .modal {
+  max-width: 420px;
+}
+.contact-body {
+  padding: 8px 22px 28px;
+  text-align: center;
+}
+.contact-body p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.contact-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  transition: background .15s;
+}
+.contact-email:hover { background: #f3f4f6; }
+.contact-email svg { width: 18px; height: 18px; color: var(--muted); }
+
+@media (max-width: 700px) {
+  .modal-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 520px) {
+  .modal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(4, 1fr); }
+  .hero h1 { font-size: 64px; }
+  .hero-sub { font-size: 19px; }
+  .search-box input { font-size: 18px; padding: 20px 14px; }
+  .btn-search { font-size: 16px; padding: 14px 24px; }
+  .chip { font-size: 12px; padding: 10px 8px; }
+  .chip svg { width: 14px; height: 14px; }
+  .section-title { font-size: 20px; }
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .hero h1 { font-size: 46px; }
+  .hero-sub { font-size: 17px; margin-bottom: 32px; }
+  .search-box { border-radius: 18px; }
+  .search-box input { font-size: 16px; padding: 16px 12px; }
+  .search-box .icon svg { width: 22px; height: 22px; }
+  .btn-search { font-size: 15px; padding: 12px 18px; margin: 8px; border-radius: 12px; }
+  .categories { flex-wrap: wrap; }
+  .chip { flex: 1 1 calc(33.33% - 8px); min-width: 90px; }
+  .section-title { font-size: 18px; }
+}
+@media (max-width: 520px) {
+  header { padding: 10px 16px; }
+  .hero { padding: 24px 16px 16px; }
+  .hero h1 { font-size: 32px; }
+  .hero-sub { font-size: 16px; }
+  .hero-controls { max-width: 100%; }
+  .search-box { border-radius: 14px; }
+  .search-box input { font-size: 14px; padding: 12px 8px; }
+  .search-box .icon { padding-left: 12px; }
+  .search-box .icon svg { width: 18px; height: 18px; }
+  .btn-search { font-size: 13px; padding: 10px 14px; margin: 6px; }
+  .chip { font-size: 11px; padding: 8px 6px; gap: 4px; }
+  .chip svg { width: 12px; height: 12px; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .section { padding: 24px 16px 48px; }
+  .section-title { font-size: 17px; }
+}
+
+/* Catálogo: las portadas ocupan todo el bloque, sin fondo gris */
+.modal-card-img[style] {
+  background: #fff !important;
+}
+.modal-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.modal-card-info {
+  background: #fff !important;
+}
+
+.price-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start;line-height:1.25}
+.price-row-sale{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px}
+.price-old{font-size:12px;color:#9ca3af;text-decoration:line-through;font-weight:600}
+.price-sale{font-size:16px;font-weight:850;color:#111827}
+.price-off{
+  display:inline-flex;align-items:center;
+  background:#16a34a;color:#fff;font-size:10px;font-weight:800;
+  padding:3px 7px;border-radius:6px;letter-spacing:.3px;text-transform:uppercase;
+}
+.sale-badge{
+  position:absolute;top:10px;left:10px;z-index:2;
+  background:#16a34a;color:#fff;font-size:11px;font-weight:800;
+  padding:5px 9px;border-radius:8px;letter-spacing:.3px;
+  box-shadow:0 2px 8px rgba(22,163,74,.35);
+}
+.sale-badge + .new-badge, .new-badge.with-sale{top:40px}
+.sale-badge + .patreon-badge{top:40px}
+.sale-badge + .new-badge + .patreon-badge,
+.new-badge.with-sale + .patreon-badge{top:70px}
+
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f5c518">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+<header class="vk-header">
+  <a href="./index.html" class="brand vk-brand">
+    <img src="logo.png" alt="Vektolab" width="36" height="36">
+    <span class="brand-name">Vektolab</span>
+  </a>
+
+  <div class="header-right vk-head-actions">
+    <button type="button" class="vk-head-btn vk-head-icon" id="contactBtn" title="Support" aria-label="Support" data-i18n-title="support_title" data-i18n-aria-label="support_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+    </button>
+    <button type="button" class="vk-head-btn" id="langBtn" title="Language" data-i18n-title="lang_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 0 0 20M12 2a15.3 15.3 0 0 1 0 20"/></svg>
+      <span id="langBtnLabel" data-i18n-lang-label>EN</span>
+    </button>
+    <button id="notifyBtn" class="vk-head-btn" type="button" aria-label="Enable notifications" title="Enable notifications" data-i18n-title="notify_title" data-i18n-aria-label="notify_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notifyBtnLabel" data-i18n="notify_label">Enable</span>
+    </button>
+    <button id="installAppBtn" class="vk-head-btn" type="button" title="Install app" data-i18n-title="install_title" aria-label="Install app" data-i18n-aria-label="install_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M5 21h14a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2"/></svg><span data-i18n="install_label">Install app</span>
+    </button>
+  </div>
+</header>
+
+<div class="page-center">
+<section class="hero">
+  <h1 data-i18n-html="heroTitle">What are we <span class="accent">creating</span> today?</h1>
+  <p class="hero-sub" data-i18n="heroSub">Designs ready to download or customize.</p>
+
+  <div class="hero-controls">
+    <div class="search-box">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </span>
+      <input type="text" id="buscar" data-i18n-placeholder="buscar" placeholder="Search designs, generators, categories..." autocomplete="off">
+      <button type="button" class="btn-search" id="btnBuscar" data-i18n="cta">Search</button>
+    </div>
+
+    <div class="categories" id="categorias"></div>
+  </div>
+</section>
+
+<div id="storeStatus" class="store-status" aria-live="polite"></div>
+
+<section class="section" id="catalogo">
+  <h3 class="section-title" data-i18n="latest">Explore our designs</h3>
+  <div class="grid" id="grid"></div>
+</section>
+
+</div>
+<footer data-i18n="footer">Developed by Vektolab</footer>
+
+<!-- Modal Catálogo -->
+<div class="modal-overlay" id="catalogModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="modalTitle">Vekto Catalog</span>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" class="modal-search" id="modalBuscar" data-i18n-placeholder="modalBuscar" placeholder="Search design..." autocomplete="off">
+      <div class="modal-cats" id="modalCats"></div>
+      <div class="modal-grid" id="modalGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Idioma (panel grande centrado) -->
+<div class="modal-overlay lang-modal" id="langModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="langTitle">Choose language</span>
+      <button type="button" class="modal-close" id="langModalClose" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="search" class="modal-search" id="langSearch" data-i18n-placeholder="langSearch" placeholder="Search language…" autocomplete="off">
+      <div class="lang-list-modal" id="langListModal"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Contacto -->
+<div class="modal-overlay contact-modal" id="contactModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" data-i18n="contactTitle">Support</span>
+      <button type="button" class="modal-close" id="contactClose" aria-label="Cerrar">×</button>
+    </div>
+    <div class="contact-body">
+      <p data-i18n="contactMsg">For assistance or if you detect any issue, please contact us. We will be happy to help you.</p>
+      <a class="contact-email" href="mailto:vektocreativeteam@gmail.com">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+        vektocreativeteam@gmail.com
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="./translate.js"></script>
+<script src="./i18n.js"></script>
+<script>
+
+const CATEGORIES = [
+  { id: "general",    label: "cat_general",    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>` },
+  { id: "toppers",    label: "cat_toppers",    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v4M8 7h8l1 3H7l1-3z"/><path d="M7 10v8a2 2 0 002 2h6a2 2 0 002-2v-8"/></svg>`,
+    subs: [ { id: "cumpleanos", label: "sub_cumpleanos" }, { id: "boda", label: "sub_boda" }, { id: "babyshower", label: "sub_babyshower" } ] },
+  { id: "mascotas",   label: "cat_mascotas",   icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="14" r="5"/><path d="M11 9V5M8 6l-1.5-2M14 6l1.5-2"/><circle cx="7" cy="11" r="1.2" fill="currentColor"/><circle cx="15" cy="11" r="1.2" fill="currentColor"/></svg>`,
+    subs: [ { id: "perros", label: "sub_perros" }, { id: "gatos", label: "sub_gatos" }, { id: "otrasmascotas", label: "sub_otrasmascotas" } ] },
+  { id: "carteles",   label: "cat_carteles",   icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>`,
+    subs: [ { id: "nombres", label: "sub_nombres" }, { id: "frases", label: "sub_frases" }, { id: "negocios", label: "sub_negocios" } ] },
+  { id: "decoracion", label: "cat_decoracion", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6"/><path d="M12 3l8 5H4l8-5z"/><path d="M12 12v9"/></svg>`,
+    subs: [ { id: "cuadros", label: "sub_cuadros" }, { id: "floreros", label: "sub_floreros" }, { id: "macetas", label: "sub_macetas" }, { id: "lamparas", label: "sub_lamparas" } ] },
+  { id: "llavero",    label: "cat_llavero",    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="M12 15V5a2 2 0 014 0v1"/><path d="M16 8h2"/></svg>`,
+    subs: [ { id: "iniciales", label: "sub_iniciales" }, { id: "nombreskey", label: "sub_nombreskey" }, { id: "mascotaskey", label: "sub_mascotaskey" } ] }
+];
+
+const MODAL_CATS = [
+  { id: "all",      label: "cat_all" },
+  { id: "animals",  label: "cat_animals" },
+  { id: "fandom",   label: "cat_fandom" },
+  { id: "home",     label: "cat_home" },
+  { id: "keychain", label: "cat_keychain" },
+  { id: "fantasy",  label: "cat_fantasy" },
+  { id: "season",   label: "cat_season" },
+  { id: "text",     label: "cat_text" }
+];
+
+const DESIGNS = [];
+
+let products = [];
+let unifiedItems = [];
+let activeCat = "all";
+let modalCat = "all";
+let expandedCat = null;
+let modalExpandedCat = null;
+
+async function loadUnifiedCatalog() {
+  const status = document.getElementById("storeStatus");
+  const grid = document.getElementById("grid");
+  if (grid) { grid.style.opacity = "0"; grid.style.pointerEvents = "none"; }
+  await loadActiveOffers();
+  try {
+    const api = (window.VEKTOLAB_API || "").replace(/\/$/, "");
+    if (api) {
+      const r = await fetch(api + "/api/products", { headers: { Accept: "application/json" }, cache: "no-store" });
+      if (r.ok) {
+        const d = await r.json();
+        products = Array.isArray(d.products) ? d.products : [];
+      }
+    }
+  } catch (e) {
+    console.warn("[Vektolab] No se pudo cargar el catálogo de productos:", e);
+  }
+  rebuildUnifiedItems();
+  if (status) status.textContent = "";
+  renderCategorias();
+  renderGrid();
+  if (grid) {
+    requestAnimationFrame(function(){
+      grid.style.transition = "opacity .2s ease";
+      grid.style.opacity = "1";
+      grid.style.pointerEvents = "";
+    });
+  }
+}
+
+function applyI18n() {
+  applyI18nDom();
+  const langLabel = document.getElementById("langBtnLabel");
+  if (langLabel) langLabel.textContent = currentLang === "pt-pt" ? "PT" : currentLang.toUpperCase();
+  rebuildUnifiedItems();
+  renderCategorias();
+  renderGrid();
+  if (document.getElementById("catalogModal").classList.contains("open")) {
+    renderModalCats();
+    renderModalGrid();
+  }
+  if (document.getElementById("langModal").classList.contains("open")) {
+    renderLangList();
+  }
+}
+
+function esc(value) { return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+function normalizeText(value) {
+  return String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/* ----- Ofertas activas (descuento en catálogo) ----- */
+let activeOffers = [];
+async function loadActiveOffers() {
+  try {
+    const api = (window.VEKTOLAB_API || "").replace(/\/$/, "");
+    if (!api) return;
+    const r = await fetch(api + "/api/offers", { headers: { Accept: "application/json" }, cache: "no-store" });
+    if (!r.ok) return;
+    const d = await r.json();
+    activeOffers = Array.isArray(d.offers) ? d.offers : [];
+  } catch (e) { activeOffers = []; }
+}
+function parseScope(raw) {
+  try {
+    const a = typeof raw === "string" ? JSON.parse(raw || "[]") : (raw || []);
+    return Array.isArray(a) ? a.map(String) : [];
+  } catch (e) { return []; }
+}
+function offerMatches(offer, item) {
+  if (!offer) return false;
+  const type = offer.scope_type || "categories";
+  const items = parseScope(offer.scope_json);
+  if (type === "all") return true;
+  const cat = String(item.category || "");
+  const sub = String(item.subcategory || "");
+  const pid = String(item.id || "");
+  if (type === "categories") return items.some(x => x.toLowerCase() === cat.toLowerCase());
+  if (type === "subcategories") return items.some(x => x.toLowerCase() === sub.toLowerCase());
+  if (type === "products") return items.includes(pid);
+  return false;
+}
+function bestOfferFor(item) {
+  let best = 0;
+  for (const o of activeOffers) {
+    const p = Math.min(100, Math.max(0, Number(o.percent) || 0));
+    if (p <= best) continue;
+    if (offerMatches(o, item)) best = p;
+  }
+  return best;
+}
+function formatUsd(cents) {
+  return "$" + (Math.max(0, Number(cents) || 0) / 100).toFixed(2) + " USD";
+}
+
+
+function isGeneratorItem(item) {
+  if (!item) return false;
+  if (item.type === "generator") return true;
+  if (item.product && (item.product.product_type === "generator" || item.product.generator_url)) return true;
+  return false;
+}
+
+function itemSearchText(item) {
+  return normalizeText([item.name, item.description, item.category, item.keywords, item.tags, item.modalCat].filter(Boolean).join(" "));
+}
+
+function productToItem(p) {
+  const name = String(p.name || "Producto");
+  const isGen = p.product_type === "generator" || !!p.generator_url;
+  return {
+    type: isGen ? "generator" : "product",
+    id: p.id,
+    name,
+    category: p.category || "General",
+    subcategory: p.subcategory || "",
+    description: p.description || "",
+    keywords: p.keywords || "",
+    tags: Array.isArray(p.tags) ? p.tags.join(" ") : (p.tags || ""),
+    image: p.image || "",
+    price_cents: Number(p.price_cents || 0),
+    product: p,
+    // Always go through product page; generators get "Personalizar y descargar" there
+    url: "./producto.html?id=" + encodeURIComponent(p.id),
+    categoryKey: normalizeText(p.category || "general").replace(/[^a-z0-9]+/g, "_"),
+    subcategoryKey: normalizeText(p.subcategory || "").replace(/[^a-z0-9]+/g, "_"),
+    modalCat: "all"
+  };
+}
+
+function rebuildUnifiedItems() {
+  const generatorItems = DESIGNS.map(d => {
+    // Extract generator key from url (e.g. generadores/llavero.html -> llavero)
+    const genKey = (d.url || "").replace(/^generadores\//, "").replace(/\.html$/, "");
+    return {
+      ...d,
+      type: "generator",
+      name: t(d.nameKey),
+      category: d.cat === "llavero" ? t("cat_llavero") : t("cat_general"),
+      categoryKey: d.cat || "general",
+      image: d.img || "",
+      // Route through product page so user sees the full product concept first
+      url: "./producto.html?generator=" + encodeURIComponent(genKey),
+      keywords: d.keywords || "",
+      tags: d.keywords || ""
+    };
+  });
+  const productItems = products.map(productToItem);
+
+  // Products are shown first because they are the current store catalog; generators remain searchable and visible alongside them.
+  unifiedItems = [...productItems, ...generatorItems];
+}
+
+function renderCategorias() {
+  const wrap = document.getElementById("categorias");
+  wrap.innerHTML = "";
+
+  // Match target design: General · Toppers · Pets · Signs · Decor · Keychains · See more
+  // (no separate "All" / "Generators" chips in the main bar)
+  CATEGORIES.forEach(c => {
+    const b = document.createElement("button");
+    const hasSubs = !!(c.subs && c.subs.length);
+    b.className = "chip" + (activeCat === c.id ? " active" : "");
+    const caretSvg = hasSubs
+      ? `<svg class="chip-caret-icon${expandedCat === c.id ? " open" : ""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>`
+      : "";
+    b.innerHTML = c.icon + "<span>" + t(c.label) + "</span>" + caretSvg;
+    b.title = hasSubs ? t("cat_expand") : "";
+    b.onclick = () => {
+      if (activeCat === c.id) {
+        activeCat = "all";
+        expandedCat = null;
+      } else {
+        activeCat = c.id;
+        expandedCat = hasSubs ? c.id : null;
+      }
+      renderCategorias();
+      renderGrid();
+    };
+    wrap.appendChild(b);
+  });
+
+  const more = document.createElement("button");
+  more.className = "chip";
+  more.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>${t("cat_more")}</span>`;
+  more.onclick = openModal;
+  wrap.appendChild(more);
+  renderSubcats();
+}
+
+function renderSubcats() {
+  const catsWrap = document.getElementById("categorias");
+  let subRow = document.getElementById("subcategorias");
+  if (!subRow) {
+    subRow = document.createElement("div");
+    subRow.id = "subcategorias";
+    subRow.className = "subcats-row";
+    catsWrap.insertAdjacentElement("afterend", subRow);
+  }
+  const cat = CATEGORIES.find(c => c.id === expandedCat);
+  if (!cat || !cat.subs || !cat.subs.length) {
+    subRow.style.display = "none";
+    subRow.innerHTML = "";
+    return;
+  }
+  subRow.style.display = "flex";
+  subRow.innerHTML = cat.subs.map(s => {
+    const subId = "sub:" + s.id;
+    return `<button type="button" class="subchip${activeCat === subId ? " active" : ""}" data-sub="${esc(subId)}">${esc(t(s.label))}</button>`;
+  }).join("");
+  subRow.querySelectorAll(".subchip").forEach(btn => {
+    btn.onclick = () => {
+      activeCat = activeCat === btn.dataset.sub ? cat.id : btn.dataset.sub;
+      renderSubcats();
+      renderGrid();
+    };
+  });
+}
+
+function cardForItem(item, index) {
+  const generator = isGeneratorItem(item);
+  const title = item.name || "Vektolab";
+  const href = item.url || "./producto.html?id=" + encodeURIComponent(item.id || "");
+  const thumb = item.image
+    ? `<img src="${esc(item.image)}" alt="${esc(title)}" loading="lazy">`
+    : (item.emoji ? `<span style="font-size:42px">${item.emoji}</span>` : `<span style="font-size:42px">📦</span>`);
+  // Categoría: preferir diccionario i18n (General → cat_general, etc.) para
+  // que funcione en TODOS los idiomas sin esperar a Google Translate.
+  const rawCategory = item.category || "General";
+  const dictCategory = (typeof vkCategoryLabel === "function" && vkCategoryLabel(rawCategory)) || null;
+  const category = dictCategory || rawCategory;
+  // Productos de la API: nombre (y categoría desconocida) se traducen al vuelo.
+  const isDynamic = !!item.product;
+
+  // Fake rating for display (matches target design). Can be replaced with real data later.
+  const ratingCount = 12 + (index * 7) % 40;
+  const rating = "5.0";
+
+  const offerPct = (generator && !isDynamic) ? 0 : bestOfferFor(item);
+  let badge = "";
+  if (index === 0) badge += `<span class="new-badge">${t("badge_new")}</span>`;
+
+  const originalCents = Number(item.price_cents || 200);
+  const saleCents = offerPct > 0 ? Math.round(originalCents * (100 - offerPct) / 100) : originalCents;
+  const priceHtml = (generator && !isDynamic)
+    ? `<div class="price">${t("free")}</div>`
+    : (offerPct > 0
+      ? `<div class="price-wrap">
+           <div class="price-row-sale">
+             <span class="price-off">${offerPct}% OFF</span>
+             <span class="price-old">${formatUsd(originalCents)}</span>
+           </div>
+           <span class="price price-sale">${formatUsd(saleCents)}</span>
+         </div>`
+      : `<div class="price">${formatUsd(originalCents)}</div>`);
+
+  // data-vk-category: original API text (for Google fallback on unknown cats)
+  // data-vk-cat-dict="1": ya resuelta por diccionario → no re-traducir con Google
+  const dynAttrs = isDynamic
+    ? ` data-vk-dynamic="1" data-vk-name="${esc(title)}" data-vk-category="${esc(rawCategory)}"${dictCategory ? ' data-vk-cat-dict="1"' : ""}`
+    : "";
+  return `<a href="${esc(href)}" class="card"${dynAttrs} style="text-decoration:none;color:inherit;display:block">
+    <div class="card-img" style="background:${item.color || "#f3f4f6"}">
+      ${badge}
+      <span class="heart" title="${t("favorite")}">♡</span>
+      ${thumb}
+    </div>
+    <div class="card-body">
+      <div class="card-name">${esc(title)}</div>
+      <div class="card-tag card-tag-patreon">
+        <span class="card-tag-text">${esc(t("badge_patreon"))}</span>
+      </div>
+      <div class="card-footer">
+        <div>
+          ${priceHtml}
+          <div class="rating"><span class="star">★</span> ${rating} (${ratingCount})</div>
+        </div>
+        <span class="cart-btn" title="${generator ? t("action_customize") : t("add_to_cart")}" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.5L21 7H6"/></svg>
+        </span>
+      </div>
+    </div>
+  </a>`;
+}
+
+function filteredItems(query = "") {
+  const q = normalizeText(query.trim());
+  let list = unifiedItems.filter(item => {
+    if (activeCat === "__generators__" && !isGeneratorItem(item)) return false;
+    if (activeCat !== "all" && activeCat !== "__generators__") {
+      if (activeCat.indexOf("sub:") === 0) {
+        const subId = normalizeText(activeCat.slice(4));
+        const bySubKey = item.subcategoryKey && normalizeText(item.subcategoryKey) === subId;
+        const bySubLabel = item.subcategory && normalizeText(item.subcategory) === subId;
+        if (!bySubKey && !bySubLabel) return false;
+      } else {
+        const byKey = item.categoryKey && normalizeText(item.categoryKey) === normalizeText(activeCat);
+        const byLabel = normalizeText(item.category) === normalizeText(activeCat);
+        if (!byKey && !byLabel) return false;
+      }
+    }
+    return !q || itemSearchText(item).includes(q);
+  });
+  return list;
+}
+
+function renderSkeleton(count = 9) {
+  const grid = document.getElementById("grid");
+  if (!grid) return;
+  grid.innerHTML = Array.from({ length: count }, () =>
+    `<div class="skeleton-card"><div class="sk-img"></div><div class="sk-line"></div><div class="sk-line short"></div></div>`
+  ).join("");
+}
+
+function renderGrid() {
+  const q = document.getElementById("buscar").value;
+  const allMatches = filteredItems(q);
+  const limit = q.trim() || activeCat !== "all" ? allMatches.length : Math.min(9, allMatches.length);
+  const list = allMatches.slice(0, limit);
+  const cards = list.map(cardForItem).join("");
+
+  let moreCard = "";
+  if (!q.trim() && activeCat === "all" && allMatches.length > 9) {
+    moreCard = `<button type="button" class="catalog-more-card" onclick="openModal()" style="flex-direction:column;gap:10px;text-align:center">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:#111827;color:#fff;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700">→ ${t("cat_more")}</span>
+      <span style="font-size:12px;font-weight:500;color:#6b7280;line-height:1.4">${t("catalog_more_hint")}</span>
+    </button>`;
+  }
+  document.getElementById("grid").innerHTML = cards + moreCard || `<div class="empty">${t("no_results")}</div>`;
+  translateDynamicCards(document.getElementById("grid"));
+}
+
+// Traduce al vuelo el nombre y la categoría de los productos reales del
+// catálogo (los que vienen de la API, marcados con data-vk-dynamic="1")
+// cuando el idioma activo no es español. Si algo falla, no rompe nada:
+// simplemente el texto queda en español.
+async function translateDynamicCards(root) {
+  if (!root) return;
+  if (typeof currentLang === "undefined" || currentLang === "es") return;
+  const cards = root.querySelectorAll('[data-vk-dynamic="1"]');
+  await Promise.all(Array.from(cards).map(async (card) => {
+    const nameEl = card.querySelector(".card-name");
+    const tagEl = card.querySelector(".card-tag-text");
+    const name = card.dataset.vkName || "";
+    const category = card.dataset.vkCategory || "";
+    const catFromDict = card.dataset.vkCatDict === "1"
+      || (typeof vkCategoryLabel === "function" && vkCategoryLabel(category));
+
+    // Categoría conocida (p.ej. "General"): siempre del diccionario i18n,
+    // igual de fiable en japonés, francés, alemán, etc.
+    if (tagEl) {
+      const dictLabel = typeof vkCategoryLabel === "function" ? vkCategoryLabel(category) : null;
+      if (dictLabel) {
+        tagEl.textContent = dictLabel;
+      } else if (typeof VKTranslate !== "undefined" && category) {
+        const tCategory = await VKTranslate.translateText(category, currentLang);
+        if (tCategory) tagEl.textContent = tCategory;
+      }
+    }
+
+    // Nombre del producto: traducción al vuelo (API en español)
+    if (nameEl && name && typeof VKTranslate !== "undefined") {
+      const tName = await VKTranslate.translateText(name, currentLang);
+      if (tName) nameEl.textContent = tName;
+    }
+  }));
+}
+
+/* ----- Modal Catálogo ----- */
+function openModal() {
+  modalCat = "all";
+  activeCat = "all";
+  modalExpandedCat = null;
+  document.getElementById("modalBuscar").value = "";
+  document.getElementById("catalogModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+  renderModalCats();
+  renderModalGrid();
+}
+function closeModal() {
+  document.getElementById("catalogModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function renderModalCats() {
+  const wrap = document.getElementById("modalCats");
+  const fixedLabels = new Set(CATEGORIES.map(c => normalizeText(t(c.label))));
+  // Categorías extra de la API: si coinciden con un alias del diccionario
+  // (p.ej. "General"), no se duplican; si no, se muestran traducidas.
+  const productCats = [...new Set(unifiedItems.filter(x=>!isGeneratorItem(x)).map(x=>x.category).filter(Boolean))]
+    .filter(x => {
+      const dict = typeof vkCategoryLabel === "function" ? vkCategoryLabel(x) : null;
+      if (dict && fixedLabels.has(normalizeText(dict))) return false;
+      if (fixedLabels.has(normalizeText(x))) return false;
+      // también ocultar si el id de categoría fija coincide
+      if (CATEGORIES.some(c => normalizeText(c.id) === normalizeText(x) || normalizeText(t(c.label)) === normalizeText(x))) return false;
+      return true;
+    })
+    .sort((a,b) => String(a).localeCompare(String(b)));
+  const cats = [
+    {id:"all", label:t("cat_all")},
+    {id:"__generators__", label:t("generators")},
+    ...CATEGORIES.map(c => ({id:c.id, label:t(c.label), subs:c.subs||[]})),
+    ...productCats.map(x => ({
+      id: x,
+      label: (typeof vkCategoryLabel === "function" && vkCategoryLabel(x)) || x
+    }))
+  ];
+  wrap.innerHTML = cats.map(c => {
+    const hasSubs = !!(c.subs && c.subs.length);
+    const caret = hasSubs
+      ? `<svg class="modal-chip-caret-icon${modalExpandedCat===c.id?" open":""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>`
+      : "";
+    return `<button type="button" class="modal-chip${modalCat===c.id?" active":""}" data-modal-cat="${esc(c.id)}" title="${hasSubs?esc(t("cat_expand")):""}">${esc(c.label)}${caret}</button>`;
+  }).join("");
+  wrap.querySelectorAll(".modal-chip").forEach(b => b.onclick = () => {
+    const id = b.dataset.modalCat;
+    const catDef = cats.find(c => c.id === id);
+    const hasSubs = !!(catDef && catDef.subs && catDef.subs.length);
+    if (modalCat === id) {
+      modalCat = "all"; activeCat = "all"; modalExpandedCat = null;
+    } else {
+      modalCat = id; activeCat = id;
+      modalExpandedCat = hasSubs ? id : null;
+    }
+    renderModalCats();
+    renderModalGrid();
+  });
+  renderModalSubcats();
+}
+
+function renderModalSubcats() {
+  const catsWrap = document.getElementById("modalCats");
+  let row = document.getElementById("modalSubcats");
+  if (!row) {
+    row = document.createElement("div");
+    row.id = "modalSubcats";
+    row.className = "modal-subcats";
+    catsWrap.insertAdjacentElement("afterend", row);
+  }
+  const cat = CATEGORIES.find(c => c.id === modalExpandedCat);
+  if (!cat || !cat.subs || !cat.subs.length) {
+    row.style.display = "none";
+    row.innerHTML = "";
+    return;
+  }
+  row.style.display = "flex";
+  row.innerHTML = cat.subs.map(s => {
+    const subId = "sub:" + s.id;
+    return `<button type="button" class="modal-subchip${modalCat===subId?" active":""}" data-modal-sub="${esc(subId)}">${esc(t(s.label))}</button>`;
+  }).join("");
+  row.querySelectorAll(".modal-subchip").forEach(btn => {
+    btn.onclick = () => {
+      modalCat = modalCat === btn.dataset.modalSub ? cat.id : btn.dataset.modalSub;
+      activeCat = modalCat;
+      renderModalCats();
+      renderModalGrid();
+    };
+  });
+}
+
+function renderModalGrid() {
+  const q = document.getElementById("modalBuscar").value;
+  const list = filteredItems(q);
+  document.getElementById("modalGrid").innerHTML = list.map(cardForItem).join("") || `<div class="empty">${t("no_results")}</div>`;
+  translateDynamicCards(document.getElementById("modalGrid"));
+}
+
+/* ----- Modal Idioma ----- */
+function openLangModal() {
+  document.getElementById("langSearch").value = "";
+  document.getElementById("langModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+  renderLangList();
+  setTimeout(() => document.getElementById("langSearch").focus(), 50);
+}
+function closeLangModal() {
+  document.getElementById("langModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function renderLangList() {
+  const q = document.getElementById("langSearch").value.toLowerCase().trim();
+  const wrap = document.getElementById("langListModal");
+  wrap.innerHTML = LANGS.map(l => {
+    const match = !q || l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q);
+    return `<button type="button" class="lang-opt-modal${currentLang === l.code ? " active" : ""}${match ? "" : " hidden"}" data-lang="${l.code}">
+      <span class="flag">${l.flag}</span> ${l.name}
+    </button>`;
+  }).join("");
+  wrap.querySelectorAll(".lang-opt-modal").forEach(opt => {
+    opt.addEventListener("click", () => {
+      closeLangModal();
+      if (typeof setLang === "function") setLang(opt.dataset.lang);
+      else {
+        currentLang = opt.dataset.lang;
+        try { localStorage.setItem("vektolab_lang_v3", currentLang); } catch (e) {}
+        applyI18n();
+      }
+    });
+  });
+}
+
+/* ----- Modal Contacto ----- */
+function openContactModal() {
+  document.getElementById("contactModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeContactModal() {
+  document.getElementById("contactModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+/* Events */
+document.getElementById("buscar").addEventListener("input", renderGrid);
+document.getElementById("btnBuscar").addEventListener("click", () => {
+  document.getElementById("buscar").focus();
+  renderGrid();
+});
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("catalogModal").addEventListener("click", e => {
+  if (e.target.id === "catalogModal") closeModal();
+});
+document.getElementById("modalBuscar").addEventListener("input", renderModalGrid);
+
+document.getElementById("langBtn").addEventListener("click", openLangModal);
+document.getElementById("langModalClose").addEventListener("click", closeLangModal);
+document.getElementById("langModal").addEventListener("click", e => {
+  if (e.target.id === "langModal") closeLangModal();
+});
+document.getElementById("langSearch").addEventListener("input", renderLangList);
+
+document.getElementById("contactBtn").addEventListener("click", openContactModal);
+document.getElementById("contactClose").addEventListener("click", closeContactModal);
+document.getElementById("contactModal").addEventListener("click", e => {
+  if (e.target.id === "contactModal") closeContactModal();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeModal();
+    closeLangModal();
+    closeContactModal();
+  }
+});
+
+document.addEventListener("vk-lang-changed", () => applyI18n());
+document.addEventListener("vk-lang-ready", () => applyI18n());
+applyI18n();
+// Muestra un esqueleto de carga y recién pinta la grilla completa (generadores + productos)
+// una sola vez que la API responde, para que no se vea el "salto" de que primero aparecen
+// solo los generadores y después, unos segundos más tarde, se suman los productos.
+renderCategorias();
+renderSkeleton();
+loadUnifiedCatalog().then(applyInitialUrlParams);
+
+function applyInitialUrlParams() {
+  const params = new URLSearchParams(location.search);
+  const cat = params.get("cat");
+  const buscar = params.get("buscar");
+  if (buscar) {
+    const input = document.getElementById("buscar");
+    if (input) input.value = buscar;
+  }
+  if (cat) activeCat = cat;
+  if (cat || buscar) {
+    renderCategorias();
+    renderGrid();
+    const section = document.getElementById("catalogo");
+    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging-compat.js"></script>
+<script>
+(() => {
+  const notifyBtn = document.getElementById('notifyBtn');
+  if (!notifyBtn) return;
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-ZWsv774bOZf_cTEt8Xr92noWpYqlERA",
+    authDomain: "vektolab-c9ac6.firebaseapp.com",
+    projectId: "vektolab-c9ac6",
+    storageBucket: "vektolab-c9ac6.firebasestorage.app",
+    messagingSenderId: "524336407537",
+    appId: "1:524336407537:web:d61fc9921813ff2398da50",
+    measurementId: "G-PFBB7BR5DY"
+  };
+  const vapidKey = "BGquMlxx3ZcZqYPdGj1UxcVg5Qsw3On-LF0YyNSUa4zEJQrJkzf2mYEcC7Nr_FeWA7FifpaG3nrrMKQ1U7q1FC4";
+  const SW_PATH = './sw.js';
+
+  const notifyLabel = document.getElementById('notifyBtnLabel');
+  const state = (text, disabled = false) => {
+    if (notifyLabel) notifyLabel.textContent = text;
+    notifyBtn.disabled = disabled;
+  };
+
+  const explainError = (err) => {
+    const code = err?.code || '';
+    const message = err?.message || String(err || 'Error desconocido');
+    console.error('[Vektolab] FCM:', code, message, err);
+
+    if (code === 'messaging/permission-blocked') {
+      return 'Chrome bloqueó las notificaciones. Desde la barra de direcciones, abra Permisos del sitio → Notificaciones → Permitir, y vuelva a intentarlo.';
+    }
+    if (code === 'messaging/unsupported-browser') {
+      return 'Este navegador no es compatible con las notificaciones push de Firebase. Pruebe con la última versión de Chrome o Edge.';
+    }
+    if (code === 'messaging/failed-service-worker-registration') {
+      return 'El Service Worker de Vektolab no pudo activarse. Recargue la página con Ctrl+F5 y vuelva a intentarlo.';
+    }
+    if (code === 'messaging/token-subscribe-failed') {
+      return 'Firebase no pudo registrar este navegador para recibir notificaciones push. Revise la clave VAPID y los ajustes de Cloud Messaging del proyecto.';
+    }
+    if (code === 'messaging/invalid-app-id') {
+      return 'La configuración de Firebase de esta versión de Vektolab no coincide con la aplicación web del proyecto.';
+    }
+    return `${message}${code ? `\n\nCódigo: ${code}` : ''}`;
+  };
+
+  const registerTokenOnServer = async (token) => {
+    try {
+      const response = await fetch(window.VEKTOLAB_PUSH_API.replace(/\/$/, '') + '/api/register-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      if (!response.ok) throw new Error(`Servidor de notificaciones respondió HTTP ${response.status}`);
+      return true;
+    } catch (err) {
+      // El registro local de FCM sigue siendo válido aunque todavía no esté conectado el Worker.
+      console.warn('[Vektolab] Token FCM obtenido, pero no se pudo registrar en el servidor:', err);
+      return false;
+    }
+  };
+
+  const boot = async () => {
+    if (!('serviceWorker' in navigator)) {
+      state((typeof t === 'function' ? t('notify_unsupported') : 'Not supported'), true);
+      return;
+    }
+    if (!('Notification' in window)) {
+      state((typeof t === 'function' ? t('notify_unsupported') : 'Not supported'), true);
+      return;
+    }
+    if (!window.isSecureContext) {
+      state((typeof t === 'function' ? t('notify_https') : 'HTTPS required'), true);
+      return;
+    }
+    if (typeof firebase === 'undefined') {
+      console.warn('[Vektolab] Firebase aún no está disponible; se reintenta al cargar la página.');
+      window.addEventListener('load', () => { boot(); }, { once: true });
+      return;
+    }
+
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const supported = await firebase.messaging.isSupported();
+      if (!supported) {
+        state((typeof t === 'function' ? t('notify_unsupported') : 'Not supported'), true);
+        return;
+      }
+
+      const messaging = firebase.messaging();
+      const registration = await navigator.serviceWorker.register(SW_PATH, { scope: './' });
+      await navigator.serviceWorker.ready;
+
+      const obtainToken = async () => {
+        const token = await messaging.getToken({
+          vapidKey,
+          serviceWorkerRegistration: registration
+        });
+        if (!token) throw new Error('Firebase no devolvió un token FCM.');
+        localStorage.setItem('vektolab_fcm_token', token);
+        await registerTokenOnServer(token);
+        return token;
+      };
+
+      if (Notification.permission === 'granted') {
+        try {
+          await obtainToken();
+          state(typeof t === 'function' ? t('notify_active') : 'On');
+        } catch (err) {
+          console.warn('[Vektolab] No se pudo recuperar el registro FCM:', err);
+          state(typeof t === 'function' ? t('notify_label') : 'Enable');
+        }
+      } else if (Notification.permission === 'denied') {
+        state((typeof t === 'function' ? t('notify_blocked') : 'Blocked'), true);
+        notifyBtn.title = typeof t === 'function' ? t('notify_blocked_title') : 'Notifications are blocked in the browser';
+      } else {
+        state(typeof t === 'function' ? t('notify_label') : 'Enable');
+      }
+
+      notifyBtn.addEventListener('click', async () => {
+        if (Notification.permission === 'denied') {
+          alert(typeof t === 'function' ? t('notify_denied_alert') : 'Chrome has blocked notifications for Vektolab. Open site permissions and select "Allow".');
+          return;
+        }
+
+        notifyBtn.disabled = true;
+        if (notifyLabel) notifyLabel.textContent = typeof t === 'function' ? t('notify_activating') : 'Enabling…';
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            state(typeof t === 'function' ? t('notify_label') : 'Enable');
+            return;
+          }
+
+          await obtainToken();
+          state(typeof t === 'function' ? t('notify_active') : 'On');
+          // No mostramos una notificación local aquí: obtener el token ya confirma que FCM quedó registrado.
+          alert(typeof t === 'function' ? t('notify_success') : 'Notifications enabled successfully!');
+        } catch (err) {
+          state(typeof t === 'function' ? t('notify_label') : 'Enable');
+          alert((typeof t === 'function' ? t('notify_fail') : 'Could not enable notifications.') + '\n\n' + explainError(err));
+        }
+      });
+
+      messaging.onMessage((payload) => {
+        const title = payload.notification?.title || payload.data?.title || 'Vektolab';
+        const body = payload.notification?.body || payload.data?.body || 'Tienes una nueva notificación.';
+        // Cuando la página está abierta, mostramos una notificación del sistema.
+        navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {
+          body,
+          icon: payload.notification?.icon || './icon-192.png',
+          badge: payload.notification?.badge || './icon-192.png',
+          data: { url: payload.data?.url || './index.html' }
+        })).catch(err => console.warn('[Vektolab] No se pudo mostrar la notificación en primer plano:', err));
+      });
+    } catch (err) {
+      console.error('[Vektolab] No se pudo iniciar FCM:', err);
+      if (err?.code === 'messaging/unsupported-browser') state((typeof t === 'function' ? t('notify_unsupported') : 'Not supported'), true);
+      else state(typeof t === 'function' ? t('notify_label') : 'Enable');
+    }
+  };
+
+  boot();
+})();
+</script>
+
+<script>
+(() => {
+  if (!('serviceWorker' in navigator)) return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' })
+      .then(() => console.log('[Vektolab] PWA service worker activo'))
+      .catch(err => console.warn('[Vektolab] No se pudo registrar el service worker:', err));
+  });
+
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installAppBtn');
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    if (installBtn) installBtn.style.display = 'inline-flex';
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        alert((typeof t === 'function' ? t('install_unavailable') : null) || 'Para instalar la app: en Chrome/Edge/Android use el menú (⋮) → "Instalar aplicación"; en iPhone/iPad use Compartir → "Añadir a pantalla de inicio". Si ya la tiene instalada, no hace falta hacerlo de nuevo.');
+        return;
+      }
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if (installBtn) installBtn.style.display = 'none';
+  });
+})();
+</script>
+<script src="./asistente.js"></script>
+</body>
+</html>

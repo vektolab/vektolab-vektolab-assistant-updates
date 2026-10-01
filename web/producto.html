@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5c518">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<title>Vektolab · Diseño</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--text:#111827;--muted:#66758c;--border:#e3e8ef;--yellow:#f5c518;--yellow2:#eab308;--soft:#f2f5f8;--navy:#172238;--shadow:0 5px 20px rgba(17,24,39,.045)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* Vektolab shared header */
+header.vk-header{display:flex;justify-content:space-between;align-items:center;padding:12px 32px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:100}
+.vk-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#111827;flex-shrink:0}
+.vk-brand img{width:36px;height:36px;object-fit:contain;display:block}
+.vk-brand span{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.vk-head-actions{display:flex;align-items:center;gap:8px}
+.vk-head-btn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:8px 12px;border-radius:10px;text-decoration:none;color:#66758c;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;border:1px solid #e5e7eb;background:#fff;cursor:pointer;gap:5px;white-space:nowrap}
+.vk-head-btn:hover{background:#f3f4f6;color:#111827}.vk-head-btn.active{background:#f1f3f6;color:#111827}
+.vk-head-btn svg{width:15px;height:15px;flex:none}.vk-head-icon{width:36px;padding:0}
+@media(max-width:700px){header.vk-header{padding:10px 16px}.vk-brand img{width:34px;height:34px}.vk-head-actions{gap:5px}.vk-head-btn{height:34px;padding:7px 9px;font-size:11px}.vk-head-icon{width:34px;padding:0}}
+@media(max-width:520px){.vk-brand span{font-size:16px}.vk-head-btn{padding:7px 7px}.vk-head-btn svg{width:13px;height:13px}.vk-head-actions{overflow-x:auto;scrollbar-width:none}.vk-head-actions::-webkit-scrollbar{display:none}}
+
+.wrap{max-width:1280px;margin:0 auto;padding:26px 32px 64px}
+.breadcrumb{display:flex;align-items:center;gap:10px;color:#6b7b91;font-size:13px;margin:4px 0 22px;white-space:nowrap;overflow:hidden}
+.crumb-back{flex:none;width:28px;height:28px;border:1px solid var(--border);border-radius:50%;background:#fff;color:#24344b;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.crumb-back svg{width:15px;height:15px}
+.crumb-back:hover{background:#f4f6f9}
+.vk-lang-wrap{position:relative;display:inline-flex}
+.vk-lang-wrap select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0}
+.breadcrumb a{color:inherit;text-decoration:none}.breadcrumb a:hover{color:var(--text)}.crumb-sep{font-size:18px;color:#9aa6b6}
+.product-top{display:grid;grid-template-columns:minmax(0,1.03fr) minmax(420px,.97fr);gap:30px;align-items:start}
+.gallery{min-width:0}.main-media{height:510px;border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.main-media img{width:100%;height:100%;object-fit:contain;display:block}
+.media-btn{position:absolute;top:12px;right:12px;height:38px;padding:0 14px;border:1px solid var(--border);background:#fff;border-radius:12px;font:700 13px inherit;color:var(--text);display:flex;align-items:center;gap:7px}
+.media-btn svg{width:16px;height:16px}
+.arrow{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border:1px solid var(--border);background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#24344b;cursor:pointer;box-shadow:var(--shadow)}
+.arrow.left{left:14px}.arrow.right{right:14px}.arrow:hover{background:#f8fafc}
+.thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
+.thumb{height:94px;border:1px solid var(--border);border-radius:11px;background:#fff;overflow:hidden;padding:0;cursor:pointer}
+.thumb.active{border:2px solid #172238}.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.detail{min-width:0;padding-top:2px}
+.badge{display:inline-flex;align-items:center;border:1px solid var(--border);background:#fff;border-radius:999px;padding:7px 13px;color:#52647b;font-size:12px;font-weight:700;margin-bottom:10px;text-decoration:none;cursor:pointer}.badge:hover{background:#f4f6f9;color:#22334b}
+.detail h1{font-size:38px;line-height:1.08;letter-spacing:-1.2px;margin:0 0 12px;font-weight:800;color:#152136}
+.license-block{margin:0 0 18px}.license-label{font-size:12px;font-weight:700;color:#65778f;margin-right:2px}.license-pill{display:inline-flex;align-items:center;border:1px solid var(--border);background:#fff;border-radius:999px;padding:7px 13px;color:#22334b;font-size:12px;font-weight:700}.license-desc{font-size:12px;line-height:1.55;color:#8a97a8;margin:8px 0 0;max-width:520px}
+.lead{font-size:15px;line-height:1.65;color:#60728b;margin:0 0 18px;max-width:650px}
+.features{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}.feature{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:#fff;border-radius:11px;padding:9px 12px;font-size:12px;font-weight:650;color:#22334b}.feature svg{width:16px;height:16px}
+.buybox{background:#fff;border:1px solid var(--border);border-radius:15px;padding:14px;box-shadow:var(--shadow)}
+.price-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch}.price-block{padding:4px 12px 8px;display:flex;flex-direction:column;justify-content:center}.price-label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750;color:#26374e}.price-label svg{width:18px}.price{font-size:31px;font-weight:850;letter-spacing:-.7px;margin-top:2px}.price small{font-size:15px;letter-spacing:0;font-weight:750}.patreon-card{border:1px solid #e3e8ef;border-radius:12px;padding:11px 13px;display:flex;align-items:center;justify-content:flex-start;gap:10px;background:#fbfcfd}.patreon-card strong{display:block;font-size:13px}.patreon-card span{display:block;color:#708097;font-size:12px;margin-top:3px}.patreon-card svg{width:18px;flex:none}
+.primary{width:100%;height:50px;margin-top:10px;border:0;border-radius:12px;background:var(--yellow);color:#111827;font:800 14px inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px}.primary:hover{background:var(--yellow2)}.primary:disabled{opacity:.55;cursor:not-allowed}
+.coupon-row{margin-top:10px;display:flex;gap:8px;align-items:stretch}
+.coupon-row input{flex:1;min-width:0;height:42px;border:1px solid #e1e7ee;border-radius:11px;padding:0 12px;font:600 13px inherit;color:#1f2937;background:#fff;outline:none}
+.coupon-row input:focus{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.coupon-row button{flex:none;height:42px;padding:0 14px;border:0;border-radius:11px;background:#1f2937;color:#fff;font:700 12px inherit;cursor:pointer;white-space:nowrap}
+.coupon-row button:hover{background:#111827}
+.coupon-row button:disabled{opacity:.55;cursor:wait}
+.coupon-msg{margin-top:6px;font-size:11.5px;line-height:1.4;min-height:16px}
+.coupon-msg.ok{color:#15803d}
+.coupon-msg.err{color:#b91c1c}
+.referral{margin-top:10px;height:43px;border-radius:11px;background:#f1f4f7;color:#52647b;display:flex;align-items:center;justify-content:space-between;padding:0 13px;font-size:12px;font-weight:700}.referral span:last-child{background:#e5eaf0;border-radius:999px;padding:5px 9px;color:#78869a;font-size:11px}
+.specs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:17px 0 0;padding:0 2px}.spec{padding:0 16px;border-right:1px solid #e4e9ef}.spec:first-child{padding-left:2px}.spec:last-child{border-right:0}.spec-head{display:flex;align-items:center;gap:8px;color:#65778f;font-size:12px}.spec-head svg{width:18px}.spec-value{font-size:12px;color:#26374e;margin-top:7px}
+.member-note{margin-top:18px;padding:15px;border-radius:12px;background:#f0f4f8;display:flex;align-items:center;gap:12px;color:#28405d}.member-note svg{width:24px;flex:none}.member-note strong{font-size:12px;display:block}.member-note span{font-size:12px;color:#6d7d92;display:block;margin-top:3px}.member-note a{margin-left:auto;color:#4e617a;text-decoration:none;font-size:11px;white-space:nowrap}
+.lower{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);gap:14px;margin-top:28px}
+.panel,.desc-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:25px 28px}
+.panel h2,.desc-card h2{font-size:16px;margin:0 0 14px;letter-spacing:-.2px}
+.desc-card p,.description{color:#5d708a;line-height:1.7;font-size:13px;white-space:pre-wrap}
+.checks{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:11px}
+.checks li{display:flex;gap:10px;align-items:center;color:#5b6d84;font-size:13px}
+.check{width:22px;height:22px;border:1px solid #e0e6ed;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:12px;color:#16a34a;font-weight:700}
+.patreon-note{margin-top:18px;padding:15px;border-radius:12px;background:#f0f4f8;display:flex;align-items:flex-start;gap:12px;color:#28405d;font-size:12px}
+.patreon-note svg{width:20px;flex:none;margin-top:2px}
+.patreon-note strong{display:block;margin-bottom:2px}
+.patreon-note .how{margin-left:auto;color:#4e617a;text-decoration:none;font-size:11px;white-space:nowrap;align-self:center}
+.referral{display:flex;align-items:center;justify-content:space-between;margin-top:10px;height:42px;padding:0 12px;border:1px solid #e5e9ef;border-radius:11px;font-size:12px;color:#66758c}
+.referral .soon{font-size:11px;color:#9ca3af;background:#f3f4f6;padding:4px 10px;border-radius:999px}
+.spec-val{font-size:12px;color:#26374e;margin-top:7px}
+.tags-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin-top:25px;padding-top:20px;border-top:1px solid #e5e9ef}.tags{display:flex;gap:9px;flex-wrap:wrap;margin-top:11px}.tag{padding:8px 14px;border:1px solid #e1e7ee;background:#fff;border-radius:999px;color:#53657c;font-size:12px;font-weight:650;text-decoration:none;cursor:pointer}.tag:hover{background:#f4f6f9;color:#22334b}
+.more-box{margin-top:20px;border-radius:12px;background:#f1f4f7;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:14px}.more-box strong{font-size:12px}.more-box p{margin:3px 0 0;color:#718197;font-size:11px}.secondary{border:1px solid #dfe5ec;background:#fff;border-radius:11px;padding:10px 15px;font:700 12px inherit;color:#293a51;white-space:nowrap;text-decoration:none}
+.side-stack{display:grid;gap:12px;align-content:start}.side-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:19px}.side-title{display:flex;align-items:center;gap:9px;font-weight:800;font-size:14px;margin-bottom:15px}.side-title svg{width:18px;height:18px}.file-info{display:grid;gap:10px}.file-row{display:flex;justify-content:space-between;gap:15px;color:#6a7b91;font-size:12px}.file-row strong{color:#566982;font-weight:500;text-align:right}.share{display:flex;gap:9px;flex-wrap:wrap}.share button{width:46px;height:42px;border:1px solid #e1e7ee;border-radius:11px;background:#fff;color:#1d2e45;font:700 13px inherit;cursor:pointer;display:flex;align-items:center;justify-content:center}.share button:hover{background:#f7f9fb}.ref-card{background:#fff}.ref-card p{font-size:12px;color:#75859a;line-height:1.55;margin:0}.ref-more{width:100%;margin-top:14px;height:38px;border:0;border-radius:10px;background:#f0f3f6;color:#66768b;font:700 11px inherit}.status{display:none;margin-bottom:14px;padding:12px;border-radius:11px;background:#fff;border:1px solid var(--border);font-size:13px}.status.show{display:block}.status.err{background:#fff3f3;color:#991b1b;border-color:#fecaca}
+.afiliados-list{display:grid;gap:10px}.afiliado-item{display:flex;align-items:center;gap:10px;border:1px solid #e9edf2;border-radius:11px;padding:10px 11px}.afiliado-img{flex:none;width:44px;height:44px;border-radius:9px;overflow:hidden;background:#f2f5f8}.afiliado-img img{width:100%;height:100%;object-fit:cover}.afiliado-info{min-width:0;flex:1}.afiliado-info strong{display:block;font-size:12.5px;color:#22334b;font-weight:650;line-height:1.3}.afiliado-info span{display:block;font-size:11px;color:#8593a6;margin-top:2px}.afiliado-precio{font-size:12px;font-weight:700;color:#26374e;flex:none}.afiliado-btn{flex:none;text-decoration:none;background:var(--yellow);color:#111827;font:800 12px inherit;padding:8px 13px;border-radius:9px;white-space:nowrap}.afiliado-btn:hover{background:var(--yellow2)}.afiliados-banner{display:flex;align-items:center;gap:8px;margin:13px 0 0;padding:10px 12px;border-radius:10px;background:#f4f8f5;color:#2f5d43;font-size:11.5px;font-weight:650;line-height:1.4}.afiliados-nota{margin:9px 0 0;font-size:10.5px;line-height:1.5;color:#9aa6b6}
+.vk-how-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;align-items:center;justify-content:center;padding:20px}.vk-how-overlay.open{display:flex}.vk-how-modal{background:#fff;border-radius:18px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18)}.vk-how-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:22px 22px 4px}.vk-how-title{font-size:17px;font-weight:800;color:var(--text)}.vk-how-close{flex:none;width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;font-family:inherit}.vk-how-close:hover{background:#f3f4f6}.vk-how-body{padding:8px 22px 26px}.vk-how-intro{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px}.vk-how-steps{display:grid;gap:16px}.vk-how-step{display:flex;gap:12px}.vk-how-num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--navy);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}.vk-how-step h4{margin:2px 0 4px;font-size:13.5px;color:var(--text)}.vk-how-step p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.55}.vk-how-alt{margin-top:20px;padding:12px 14px;border-radius:11px;background:#f4f6f9;font-size:12px;color:#4b5b70;line-height:1.55}
+@media(max-width:1000px){.product-top{grid-template-columns:1fr}.main-media{height:min(68vw,560px)}.detail{padding-top:10px}.lower{grid-template-columns:1fr}}
+@media(max-width:700px){.wrap{padding:17px 12px 45px}.breadcrumb{font-size:11px;margin-bottom:14px}.product-top{gap:14px}.main-media{height:92vw;max-height:470px;border-radius:13px}.media-btn{height:34px;padding:0 11px;font-size:11px}.arrow{width:34px;height:34px}.thumbs{gap:7px}.thumb{height:72px}.detail h1{font-size:28px;letter-spacing:-.8px}.lead{font-size:13px;line-height:1.55;margin-bottom:13px}.features{gap:6px}.feature{padding:8px 9px;font-size:11px}.buybox{padding:10px;border-radius:13px}.price-row{grid-template-columns:1fr 1fr;gap:7px}.price-block{padding:3px 7px 7px}.price{font-size:26px}.price-label{font-size:11px}.patreon-card{padding:9px}.patreon-card strong{font-size:11px}.patreon-card span{font-size:10px}.primary{height:48px;font-size:13px}.referral{height:40px}.specs{margin-top:14px}.spec{padding:0 9px}.spec-head{font-size:10px;gap:5px}.spec-value{font-size:10px;line-height:1.4}.member-note{padding:12px;align-items:flex-start}.member-note a{display:none}.lower{margin-top:14px}.panel{padding:19px 17px;border-radius:13px}.description{font-size:12px}.checks li{font-size:12px}.side-card{padding:17px}.more-box{align-items:flex-start;flex-direction:column}.secondary{width:100%;text-align:center}}
+@media(max-width:420px){.price-row{grid-template-columns:1fr}.patreon-card{min-height:62px}.specs{grid-template-columns:1fr;gap:12px}.spec{border-right:0;border-bottom:1px solid #e5e9ef;padding:0 0 10px}.spec:last-child{border-bottom:0;padding-bottom:0}}
+
+.price-block .price{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.price-old{font-size:15px;color:#9ca3af;text-decoration:line-through;font-weight:600}
+.price-sale{font-size:31px;font-weight:850;color:#111827;letter-spacing:-.5px}
+.price-off-pill{
+  display:inline-flex;align-items:center;
+  background:#16a34a;color:#fff;font-size:12px;font-weight:800;
+  padding:4px 10px;border-radius:8px;letter-spacing:.3px;text-transform:uppercase;
+}
+.price-was-now{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 10px}
+
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.174.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="vk-header">
+  <a href="./index.html" class="vk-brand"><img src="logo.png" alt="Vektolab"><span>Vektolab</span></a>
+  <div class="vk-head-actions">
+    <button type="button" class="vk-head-btn vk-head-icon" id="contactBtn" title="Support" aria-label="Support" data-i18n-title="support_title" data-i18n-aria-label="support_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+    </button>
+    <button type="button" class="vk-head-btn" id="langBtn" title="Language" data-i18n-title="lang_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 0 0 20M12 2a15.3 15.3 0 0 1 0 20"/></svg><span id="langBtnLabel" data-i18n-lang-label>EN</span>
+    </button>
+    <button id="notifyBtn" class="vk-head-btn" type="button" aria-label="Enable notifications" title="Enable notifications" data-i18n-title="notify_title" data-i18n-aria-label="notify_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notifyBtnLabel" data-i18n="notify_label">Enable</span>
+    </button>
+    <button id="installAppBtn" class="vk-head-btn" type="button" title="Install app" data-i18n-title="install_title" aria-label="Install app" data-i18n-aria-label="install_title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v11"/><path d="m8 10 4 4 4-4"/><path d="M5 21h14a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2"/></svg><span data-i18n="install_label">Install app</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="breadcrumb">
+    <button type="button" class="crumb-back" id="crumbBack" aria-label="Volver" title="Volver" data-i18n-title="crumb_back" data-i18n-aria-label="crumb_back" onclick="(function(){ if (document.referrer && document.referrer.indexOf(location.host) !== -1 && history.length > 1) { history.back(); } else { location.href = './index.html'; } })()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    </button>
+    <a href="./index.html" data-i18n="crumb_home">⌂ Home</a><span class="crumb-sep">›</span><span id="crumbName" data-i18n="p_design">Design</span>
+  </div>
+  <div id="status" class="status"></div>
+  <section id="app" class="product-top">
+    <div class="gallery"><div class="main-media"><div class="empty" data-i18n="p_loading">Loading design…</div></div></div>
+    <div class="detail"><div class="badge">General</div><h1 data-i18n="p_loading_short">Loading…</h1></div>
+  </section>
+  <section id="lower" class="lower" style="display:none"></section>
+</main>
+
+<div class="vk-how-overlay" id="howModal" role="dialog" aria-modal="true" aria-labelledby="howModalTitle">
+  <div class="vk-how-modal">
+    <div class="vk-how-header">
+      <div class="vk-how-title" id="howModalTitle">How membership download works</div>
+      <button type="button" class="vk-how-close" id="howClose" aria-label="Close">×</button>
+    </div>
+    <div class="vk-how-body">
+      <p class="vk-how-intro">Vektolab makes its designs available to the community through Patreon. Below is the full process, step by step.</p>
+      <div class="vk-how-steps">
+        <div class="vk-how-step"><div class="vk-how-num">1</div><div><h4>Choose a membership tier</h4><p>Go to the Vektolab Patreon page and select the tier that best fits your interests.</p></div></div>
+        <div class="vk-how-step"><div class="vk-how-num">2</div><div><h4>Confirm the subscription</h4><p>Patreon processes the payment and activates membership automatically, with no extra steps on your side.</p></div></div>
+        <div class="vk-how-step"><div class="vk-how-num">3</div><div><h4>Connect your account with Vektolab</h4><p>When you sign in with Patreon on the site, the system can verify active membership each time a download is requested.</p></div></div>
+        <div class="vk-how-step"><div class="vk-how-num">4</div><div><h4>Download the designs</h4><p>Once membership is verified, the STL file is available for immediate download at no extra cost.</p></div></div>
+        <div class="vk-how-step"><div class="vk-how-num">5</div><div><h4>Renewal and cancellation</h4><p>Membership renews automatically according to the chosen cycle. You can cancel anytime from your Patreon account.</p></div></div>
+      </div>
+      <p class="vk-how-alt">When the listing allows it, you can also buy that download individually via PayPal, without subscribing.</p>
+    </div>
+  </div>
+</div>
+
+<script src="./store-config.js"></script>
+<script src="./push-config.js"></script>
+<script src="./patreon-gate.js"></script>
+<script src="./translate.js"></script>
+<script src="./i18n.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging-compat.js"></script>
+<script src="./vk-header.js"></script>
+
+<script>
+const API = (window.VEKTOLAB_API || "").replace(/\/$/, "");
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+const generatorKey = params.get("generator");
+const app = document.getElementById("app");
+const lower = document.getElementById("lower");
+const statusEl = document.getElementById("status");
+const crumb = document.getElementById("crumbName");
+
+let product = null;
+let images = [];
+let imageIndex = 0;
+let isGen = false;
+let genUrl = "";
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+}
+function money(c) {
+  return "$" + (Number(c || 0) / 100).toFixed(2);
+}
+
+// Local generator catalog (matches DESIGNS in index.html)
+const GENERATORS = {
+  "llavero": {
+    name: "Llavero personalizado",
+    description: "Generador de llaveros personalizables para nombres, textos y diseños. Ideal para regalos, eventos y merchandising.",
+    category: "Llaveros",
+    image: "imagenes/llavero.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Llavero", "Nombre"],
+    url: "generadores/llavero.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "cortador-galletas": {
+    name: "Cortador de galletas",
+    description: "Generador de cortadores de galletas con formas personalizables. Perfecto para repostería y eventos.",
+    category: "General",
+    image: "imagenes/cortador-galletas.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Cortador", "Cocina"],
+    url: "generadores/cortador-galletas.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "letras-huecas": {
+    name: "Letras huecas",
+    description: "Generador de letras huecas personalizables con diferentes fuentes y medidas. Ideal para decoración y nombres 3D.",
+    category: "General",
+    image: "imagenes/letras-huecas.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Letras", "Decoración"],
+    url: "generadores/letras-huecas.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "silueta-2d": {
+    name: "Silueta 2D",
+    description: "Generador de siluetas 2D personalizables a partir de imágenes o formas. Crea contornos listos para impresión 3D.",
+    category: "General",
+    image: "imagenes/silueta-2d.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Silueta", "2D"],
+    url: "generadores/silueta-2d.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "identificador-lapiz": {
+    name: "Identificador de lápiz",
+    description: "Generador de identificadores personalizables para lápices y objetos. Ideal para la escuela y el escritorio.",
+    category: "General",
+    image: "imagenes/identificador-lapiz.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Identificador", "Escuela"],
+    url: "generadores/identificador-lapiz.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "placa-nombre-3d": {
+    name: "Placa de nombre 3D",
+    description: "Generador de placas de nombre 3D personalizables con texto y detalles. Perfectas para habitaciones y regalos.",
+    category: "Decoración",
+    image: "imagenes/placa-nombre-3d.webp",
+    price_cents: 200,
+    tags: ["Personalizable", "Placa", "Nombre", "3D"],
+    url: "generadores/placa-nombre-3d.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  },
+  "cartel-luna": {
+    name: "Placa Castillo infantil",
+    description: "Diseño personalizable de placa con castillo y nombre. Ideal para habitaciones infantiles, fácil de imprimir y con detalles delicados.",
+    category: "General",
+    image: "imagenes/cartel-luna.webp",
+    price_cents: 200,
+    tags: ["Decoración", "Infantil", "Placa", "Personalizable", "Castillo"],
+    url: "generadores/cartel-luna.html",
+    features: ["Personalizable", "STL listo para imprimir", "Cotas incluidas"]
+  }
+};
+
+function showError(msg) {
+  statusEl.textContent = msg;
+  statusEl.className = "status show err";
+  app.innerHTML = '<div class="gallery"><div class="main-media"><div class="empty">' + t("p_not_available") + '</div></div></div><div class="detail"><h1>' + t("p_design_unavailable") + '</h1><p class="lead">' + esc(msg) + '</p></div>';
+  lower.style.display = "none";
+}
+
+function imgList(p) {
+  const arr = [];
+  if (Array.isArray(p.images)) arr.push(...p.images);
+  if (p.image && !arr.includes(p.image)) arr.unshift(p.image);
+  return arr.filter(Boolean);
+}
+
+function renderGallery() {
+  const gallery = app.querySelector(".gallery");
+  if (!gallery) return;
+  const main = images[imageIndex] || null;
+
+  let thumbsHtml = "";
+  if (images.length > 1) {
+    thumbsHtml = '<div class="thumbs">' + images.map((src, i) =>
+      '<button type="button" class="thumb' + (i === imageIndex ? " active" : "") + '" data-idx="' + i + '">' +
+      '<img src="' + esc(src) + '" alt="" loading="lazy">' +
+      "</button>"
+    ).join("") + "</div>";
+  }
+
+  gallery.innerHTML =
+    '<div class="main-media">' +
+      (main
+        ? '<img src="' + esc(main) + '" alt="' + esc(product.name) + '" id="mainImg">'
+        : '<div class="empty">' + t("p_not_available") + '</div>') +
+      (product.model_3d_url
+        ? '<button type="button" class="media-btn" id="view3dBtn" title="' + t("p_view3d") + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg> ' + t("p_view3d") + '</button>'
+        : '<button type="button" class="media-btn" title="' + t("p_view3d") + '" disabled style="opacity:.5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg> ' + t("p_view3d") + '</button>') +
+      (images.length > 1
+        ? '<button type="button" class="arrow left" id="prevImg">‹</button><button type="button" class="arrow right" id="nextImg">›</button>'
+        : "") +
+    "</div>" +
+    thumbsHtml;
+
+  // Wire up navigation
+  const prev = document.getElementById("prevImg");
+  const next = document.getElementById("nextImg");
+  if (prev) prev.onclick = () => { imageIndex = (imageIndex - 1 + images.length) % images.length; renderGallery(); };
+  if (next) next.onclick = () => { imageIndex = (imageIndex + 1) % images.length; renderGallery(); };
+  gallery.querySelectorAll(".thumb").forEach(btn => {
+    btn.onclick = () => { imageIndex = Number(btn.dataset.idx); renderGallery(); };
+  });
+  const view3dBtn = document.getElementById("view3dBtn");
+  if (view3dBtn) view3dBtn.onclick = () => openModelViewer(product.model_3d_url, product.name);
+}
+
+// ---------- Visor 3D (modal, módulo ES con three.js moderno) ----------
+let vkViewerModulePromise = null;
+function loadViewerModule() {
+  if (!vkViewerModulePromise) vkViewerModulePromise = import("./vk-3d-viewer.js");
+  return vkViewerModulePromise;
+}
+async function openModelViewer(url, title) {
+  if (!url) return;
+  try {
+    const mod = await loadViewerModule();
+    mod.showModel(url, title);
+  } catch (e) {
+    console.error("Vektolab · no se pudo cargar el visor 3D:", e);
+  }
+}
+
+function renderAffiliates(product) {
+  let items = [];
+  try {
+    const parsed = JSON.parse(product && product.materiales_json || "[]");
+    items = Array.isArray(parsed) ? parsed.filter(a => a && (a.nombre || a.url)) : [];
+  } catch (e) { items = []; }
+  if (!items.length) return "";
+  return (
+    '<div class="side-card afiliados-card">' +
+      '<div class="side-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> ' + t("p_materials_title") + '</div>' +
+      '<div class="afiliados-list">' +
+        items.map(a =>
+          '<div class="afiliado-item">' +
+            (a.imagen ? '<div class="afiliado-img"><img src="' + esc(a.imagen) + '" alt=""></div>' : '') +
+            '<div class="afiliado-info"><strong>' + esc(a.nombre || "Producto recomendado") + '</strong>' +
+              (a.nota ? '<span>' + esc(a.nota) + '</span>' : '') +
+            '</div>' +
+            (a.precio ? '<span class="afiliado-precio">' + esc(a.precio) + '</span>' : '') +
+            (a.url ? '<a class="afiliado-btn" href="' + esc(a.url) + '" target="_blank" rel="noopener sponsored">' + t("p_buy") + '</a>' : '') +
+          '</div>'
+        ).join("") +
+      '</div>' +
+      '<div class="afiliados-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M12 20V10"/><path d="M12 10c-4-1-6-4-6-7 3 0 6 2 7 6"/><path d="M12 10c4-1 6-4 6-7-3 0-6 2-7 6"/></svg> Su compra contribuye a que este proyecto siga creciendo.</div>' +
+      '<p class="afiliados-nota">Selección recomendada por Vektolab. Algunos productos están disponibles en Amazon.</p>' +
+    '</div>'
+  );
+}
+
+function render() {
+  isGen = !!genUrl || (product && (product._isGenerator || product.generator_url));
+  if (product.generator_url) genUrl = product.generator_url;
+
+  const tags = Array.isArray(product.tags)
+    ? product.tags
+    : (product.tags ? String(product.tags).split(/[,;]+/).map(s => s.trim()).filter(Boolean) : []);
+  if (isGen && !tags.includes("Personalizable")) tags.unshift("Personalizable");
+
+  const LICENSE_LABELS = {
+    personal: t("p_license_personal"),
+    commercial: t("p_license_commercial") || "Commercial use allowed",
+    "cc-by": "CC BY",
+    "cc-by-nc": "CC BY-NC",
+    "cc-by-sa": "CC BY-SA",
+    "no-derivatives": t("p_license_noderiv") || "No derivatives"
+  };
+  const LICENSE_DESC = {
+    personal: t("p_license_personal_note"),
+    commercial: t("p_license_commercial_note") || "Commercial use allowed for physical prints. Do not redistribute the digital file.",
+    "cc-by": t("p_license_ccby") || "You may use, modify and commercialize with attribution.",
+    "cc-by-nc": t("p_license_ccbync") || "Use and modification with attribution. No commercial use.",
+    "cc-by-sa": t("p_license_ccbysa") || "Use and modification with attribution. Derivatives under same license.",
+    "no-derivatives": t("p_license_noderiv_note") || "You may use the design as-is. Modifications are not allowed."
+  };
+  const lic = product.license || "personal";
+  const licLabel = LICENSE_LABELS[lic] || lic;
+  const licDesc = LICENSE_DESC[lic] || "";
+
+  // El link real del archivo ya no viaja público: solo sabemos si existe.
+  const hasStl = !!product.has_file;
+
+  crumb.textContent = product.name;
+  document.title = product.name + " · Vektolab";
+  images = imgList(product);
+  imageIndex = 0;
+
+  // Primary CTA
+  let ctaHtml = "";
+  if (isGen) {
+    ctaHtml = '<button class="primary" id="generatorBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg> ' + t("p_customize_download") + ' <span>→</span></button>';
+  } else if (hasStl) {
+    const exclusiveAttr = (!isGen && (product.patreon_exclusive === 1 || product.patreon_exclusive === "1" || product.patreon_exclusive === true)) ? ' data-vk-exclusive="1"' : '';
+    ctaHtml = '<button class="primary" id="downloadBtn" type="button"' + exclusiveAttr + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg> ' + t("p_buy_download") + '</button>';
+  } else {
+    ctaHtml = '<button class="primary" disabled>' + t("p_stl_unavailable") + '</button>';
+  }
+
+  // Price display (ofertas/cupones también aplican a generadores)
+  let priceDisplay = money(product.price_cents || 200);
+  let saleMeta = null;
+
+  const exclusivePatreon = !isGen && (product.patreon_exclusive === 1 || product.patreon_exclusive === "1" || product.patreon_exclusive === true);
+  let noteTitle, noteBody;
+  if (isGen) {
+    noteTitle = t("p_gen_note_title");
+    noteBody = t("p_gen_note_body");
+  } else if (exclusivePatreon) {
+    noteTitle = t("p_member_exclusive_title");
+    noteBody = t("p_member_exclusive_body");
+  } else {
+    noteTitle = t("p_member_note_title");
+    noteBody = t("p_member_note_body");
+  }
+
+  app.innerHTML =
+    '<div class="gallery"></div>' +
+    '<div class="detail">' +
+      '<a class="badge" id="prodCategoryBadge" href="./index.html?cat=' + encodeURIComponent(product.category || "General") + '" data-orig="' + esc(product.category || "General") + '">' + esc(product.category || "General") + '</a>' +
+      '<h1 id="prodTitle">' + esc(product.name) + '</h1>' +
+      '<div class="license-block"><span class="license-label">' + t("p_license") + ':</span> <span class="license-pill">' + esc(licLabel) + '</span>' +
+        (licDesc ? '<p class="license-desc">' + esc(licDesc) + '</p>' : '') +
+      '</div>' +
+      '<div class="buybox">' +
+        '<div class="price-row">' +
+          '<div class="price-block">' +
+            '<div class="price-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="m20 12-8 8-8-8V4h8l8 8Z"/><circle cx="8" cy="8" r="1.2"/></svg> ' + t("p_price") + '</div>' +
+            '<div class="price" id="prodPriceValue">' + priceDisplay + ' <small>USD</small></div>' +
+          '</div>' +
+          '<div class="patreon-card">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px;height:18px;flex:none"><path d="M3 8l3.5 3L12 5l5.5 6L21 8l-2 11H5L3 8Z"/></svg>' +
+            '<div><strong>' + t("p_patreon_members") + '</strong><span>' + t("p_patreon_free_stl") + '</span></div>' +
+          '</div>' +
+        '</div>' +
+        ctaHtml +
+        '<div class="coupon-row" id="couponRow">' +
+          '<input type="text" id="couponInput" maxlength="40" placeholder="' + esc(t("p_coupon_placeholder") || "Código de cupón") + '" autocomplete="off" spellcheck="false" />' +
+          '<button type="button" id="couponApplyBtn">' + esc(t("p_coupon_apply") || "Aplicar") + '</button>' +
+        '</div>' +
+        '<div class="coupon-msg" id="couponMsg" aria-live="polite"></div>' +
+        '<div class="referral"><span style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg> ' + t("p_share_earn") + '</span><span class="soon">' + t("p_coming_soon") + '</span></div>' +
+      '</div>' +
+      '<div class="specs">' +
+        '<div class="spec"><div class="spec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg> ' + t("p_model_size") + '</div><div class="spec-val">' + esc(product.size_model || product.size || t("p_model_size_val")) + '</div></div>' +
+        '<div class="spec"><div class="spec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg> ' + t("p_layer_height") + '</div><div class="spec-val">' + esc(product.layer_height || "0.2 mm") + '</div></div>' +
+        '<div class="spec"><div class="spec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M12 2c-4 4.3-6 7.4-6 9.8a6 6 0 0 0 12 0c0-2.4-2-5.5-6-9.8Z"/></svg> ' + t("p_suggested_material") + '</div><div class="spec-val">' + esc(product.material || "PLA") + '</div></div>' +
+      '</div>' +
+      '<div class="patreon-note">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>' +
+        '<div><strong>' + noteTitle + '</strong><br><span>' + noteBody + '</span></div>' +
+        '<a href="#" class="how" onclick="openHowModal(event)">' + t("p_how_it_works") + ' →</a>' +
+      '</div>' +
+    '</div>';
+
+  renderGallery();
+
+  // Lower section
+  lower.style.display = "grid";
+  lower.innerHTML =
+    '<div class="desc-card">' +
+      '<h2>' + t("p_description") + '</h2>' +
+      '<p id="prodDescriptionText" data-orig="' + esc(product.description || "") + '">' + esc(product.description || t("p_no_description")) + '</p>' +
+      '<div class="tags-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1"/></svg> ' + t("p_tags") + '</div>' +
+      '<div class="tags" id="prodTagsWrap">' + tags.map(tg => '<a class="tag" data-orig="' + esc(tg) + '" href="./index.html?buscar=' + encodeURIComponent(tg) + '">' + esc(tg) + '</a>').join("") + '</div>' +
+      '<div class="more-box">' +
+        '<div><strong>' + t("p_more_like") + '</strong><p>' + t("p_more_like_sub") + '</p></div>' +
+        '<a class="secondary" href="./index.html">' + t("p_see_more") + '</a>' +
+      '</div>' +
+    '</div>' +
+    '<aside class="side-stack">' +
+      renderAffiliates(product) +
+      '<div class="side-card">' +
+        '<div class="side-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/></svg> ' + t("p_file_info") + '</div>' +
+        '<div class="file-info">' +
+          '<div class="file-row"><span>' + t("p_file_type") + '</span><strong>' + (isGen ? "Generador + STL" : "STL") + '</strong></div>' +
+          '<div class="file-row"><span>' + t("p_file_size") + '</span><strong>' + esc(product.file_size || (isGen ? "—" : "—")) + '</strong></div>' +
+          '<div class="file-row"><span>' + t("p_resolution") + '</span><strong>' + t("p_high_quality") + '</strong></div>' +
+          '<div class="file-row"><span>' + t("p_category") + '</span><strong id="prodFileCategoryValue" data-orig="' + esc(product.category || "General") + '">' + esc(product.category || "General") + '</strong></div>' +
+          '<div class="file-row"><span>' + t("p_license") + '</span><strong>' + esc(licLabel) + '</strong></div>' +
+          (product.pdf_url ? '<div class="file-row"><span>' + t("p_instructions") + '</span><strong><a href="' + esc(product.pdf_url) + '" target="_blank" rel="noopener">' + t("p_download_pdf") + '</a></strong></div>' : '') +
+          (product.model_3d_url ? '<div class="file-row"><span>' + t("p_viewer_3d") + '</span><strong><a href="' + esc(product.model_3d_url) + '" target="_blank" rel="noopener">' + t("p_open_3mf") + '</a></strong></div>' : '') +
+          '<div class="file-row"><span>' + t("p_last_update") + '</span><strong>' + esc(product.created_at || product.updated_at || "—") + '</strong></div>' +
+          (licDesc ? '<p style="margin:12px 0 0;font-size:11px;color:#6b7280;line-height:1.45">' + esc(licDesc) + '</p>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="side-card">' +
+        '<div class="side-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg> ' + t("p_share") + '</div>' +
+        '<div class="share">' +
+          '<button type="button" onclick="shareProduct()" title="' + t("p_share") + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></button>' +
+          '<button type="button" onclick="copyLink()" title="Copiar enlace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.07 0l1.93-1.93a5 5 0 0 0-7.07-7.07L10.5 5.5"/><path d="M14 11a5 5 0 0 0-7.07 0L4.99 12.93a5 5 0 0 0 7.07 7.07L13.5 18.5"/></svg></button>' +
+          '<button type="button" title="Facebook" onclick="window.open(\'https://www.facebook.com/sharer/sharer.php?u=\'+encodeURIComponent(location.href),\'_blank\')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.324v-21.35c0-.732-.593-1.325-1.325-1.325z"/></svg></button>' +
+          '<button type="button" title="Pinterest" onclick="window.open(\'https://pinterest.com/pin/create/button/?url=\'+encodeURIComponent(location.href),\'_blank\')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0a12 12 0 0 0-4.373 23.178c-.035-.947-.006-2.087.235-3.117.26-1.109 1.732-7.336 1.732-7.336s-.442-.885-.442-2.191c0-2.053 1.19-3.586 2.673-3.586 1.259 0 1.868.945 1.868 2.076 0 1.265-.807 3.156-1.223 4.911-.348 1.469.737 2.667 2.185 2.667 2.623 0 4.379-3.368 4.379-7.352 0-3.032-2.042-5.301-5.756-5.301-4.194 0-6.809 3.128-6.809 6.623 0 1.205.355 2.056.911 2.716.256.303.291.425.198.774-.066.256-.219.868-.282 1.11-.092.35-.375.475-.69.346-1.929-.786-2.828-2.895-2.828-5.267 0-3.92 3.305-8.623 9.868-8.623 5.276 0 8.749 3.818 8.749 7.918 0 5.423-3.005 9.474-7.435 9.474-1.487 0-2.885-.792-3.363-1.7 0 0-.799 3.156-.968 3.767-.29 1.055-.86 2.11-1.383 2.934A12 12 0 1 0 12 0z"/></svg></button>' +
+          '<button type="button" title="X (Twitter)" onclick="window.open(\'https://twitter.com/intent/tweet?url=\'+encodeURIComponent(location.href)+\'&text=\'+encodeURIComponent(product.name),\'_blank\')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></button>' +
+          '<button type="button" title="WhatsApp" onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(product.name+\' \'+location.href),\'_blank\')"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.001 0C5.373 0 0 5.373 0 12c0 2.121.554 4.113 1.524 5.841L0 24l6.334-1.62A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12.001 0zm0 21.868a9.83 9.83 0 0 1-5.02-1.377l-.36-.214-3.751.96 1.001-3.658-.235-.375A9.812 9.812 0 0 1 2.132 12C2.132 6.483 6.482 2.132 12 2.132S21.868 6.483 21.868 12 17.518 21.868 12.001 21.868zm5.471-7.486c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg></button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="side-card ref-card">' +
+        '<div class="side-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ' + t("p_referral") + '</div>' +
+        '<p>' + t("p_referral_body") + '</p>' +
+        '<button class="ref-more" disabled>' + t("p_more_info") + '</button>' +
+      '</div>' +
+    '</aside>';
+
+  // Wire CTA buttons
+  // El acceso al generador lo controla patreon-gate.js (#generatorBtn):
+  // muestra el modal de Patreon/PayPal y solo tras confirmar redirige.
+  const genBtn = document.getElementById("generatorBtn");
+  if (genBtn && genUrl) {
+    genBtn.dataset.url = genUrl;
+    window.vkGeneratorUrl = genUrl;
+  }
+
+  // Cupón debajo del botón de compra (publicaciones normales y generadores)
+  wireCouponUI();
+
+  const dlBtn = document.getElementById("downloadBtn");
+  if (dlBtn) {
+    dlBtn.onclick = async () => {
+      if (!hasStl) return;
+      // patreon-gate.js intercepts this click for members
+      if (dlBtn.dataset.vkPatreonApproved === "1" || dlBtn.dataset.vkPayPalApproved === "1") {
+        try {
+          dlBtn.disabled = true;
+          dlBtn.textContent = t("p_downloading");
+          // El archivo se pide siempre a /api/download, que verifica del lado
+          // del servidor la membresía de Patreon o el pago de PayPal antes de
+          // entregarlo. Nunca se usa un link público directo al STL.
+          const api = (window.VEKTOLAB_API || "").replace(/\/$/, "");
+          const qs = new URLSearchParams({ product: product.id });
+          const dlHeaders = {};
+          if (dlBtn.dataset.vkPatreonApproved === "1") {
+            let session = "";
+            try { session = sessionStorage.getItem("vektolab_patreon_session_v1") || localStorage.getItem("vektolab_patreon_session_v1") || ""; } catch (e) {}
+            if (session) dlHeaders["Authorization"] = "Bearer " + session;
+          } else if (dlBtn.dataset.vkPayPalToken) {
+            qs.set("dtoken", dlBtn.dataset.vkPayPalToken);
+          }
+          const res = await fetch(api + "/api/download?" + qs.toString(), { headers: dlHeaders, cache: "no-store" });
+          if (!res.ok) throw new Error(t("p_download_error"));
+          const blob = await res.blob();
+          const a = document.createElement("a");
+          const u = URL.createObjectURL(blob);
+          a.href = u;
+          a.download = (product.name || "modelo").replace(/[^\w\-]+/g, "_") + ".stl";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(u);
+        } catch (e) {
+          alert(e.message || t("p_download_error_generic"));
+        } finally {
+          dlBtn.disabled = false;
+          dlBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg> ' + t("p_buy_download");
+        }
+      }
+    };
+  }
+
+  translateProductDynamic();
+}
+
+// Traduce al vuelo el nombre, la categoría, la descripción y las etiquetas
+// del producto (texto libre cargado desde el panel de administración, no
+// contemplado por el diccionario fijo de i18n.js) cuando el idioma activo
+// no es español. Se apoya en el atributo data-orig de cada elemento para
+// partir siempre del texto original en español, sin importar cuántas
+// veces se cambie de idioma. Si la traducción falla, el texto original
+// queda tal cual: nunca rompe la página.
+async function translateProductDynamic() {
+  if (typeof VKTranslate === "undefined" || !product) return;
+  if (typeof currentLang === "undefined" || currentLang === "es") return;
+
+  const titleEl = document.getElementById("prodTitle");
+  const badgeEl = document.getElementById("prodCategoryBadge");
+  const descEl = document.getElementById("prodDescriptionText");
+  const fileCatEl = document.getElementById("prodFileCategoryValue");
+  const tagsWrap = document.getElementById("prodTagsWrap");
+  const tagEls = tagsWrap ? Array.from(tagsWrap.querySelectorAll(".tag")) : [];
+
+  const name = product.name || "";
+  const category = product.category || "General";
+  const description = (descEl && descEl.dataset.orig) || product.description || "";
+  const tagTexts = tagEls.map(el => el.dataset.orig || el.textContent);
+
+  // Categoría conocida → diccionario i18n (General, Decoración, etc.)
+  // igual que en el catálogo, fiable en todos los idiomas.
+  const dictCat = typeof vkCategoryLabel === "function" ? vkCategoryLabel(category) : null;
+
+  const toTranslate = [name, dictCat ? "" : category, description, ...tagTexts];
+  let tName, tCategory, tDescription, tTags;
+  if (typeof VKTranslate !== "undefined" && currentLang !== "es") {
+    const out = await VKTranslate.translateAll(toTranslate, currentLang);
+    tName = out[0];
+    tCategory = dictCat || out[1];
+    tDescription = out[2];
+    tTags = out.slice(3);
+  } else {
+    tName = name;
+    tCategory = dictCat || category;
+    tDescription = description;
+    tTags = tagTexts;
+  }
+  if (dictCat) tCategory = dictCat;
+
+  if (titleEl && tName) titleEl.textContent = tName;
+  if (crumb && tName) crumb.textContent = tName;
+  if (tName) document.title = tName + " · Vektolab";
+  if (badgeEl && tCategory) badgeEl.textContent = tCategory;
+  if (fileCatEl && tCategory) fileCatEl.textContent = tCategory;
+  if (descEl && description && tDescription) descEl.textContent = tDescription;
+  tagEls.forEach((el, i) => { if (tTags[i]) el.textContent = tTags[i]; });
+}
+
+window.openHowModal = (e) => {
+  if (e) e.preventDefault();
+  const modal = document.getElementById("howModal");
+  if (modal) {
+    const title = modal.querySelector("#howModalTitle");
+    if (title) title.textContent = t("p_how_title");
+    const intro = modal.querySelector(".vk-how-intro");
+    if (intro) intro.textContent = t("p_how_intro");
+    const steps = modal.querySelectorAll(".vk-how-step");
+    const stepData = [
+      [t("p_how_1_title"), t("p_how_1_body")],
+      [t("p_how_2_title"), t("p_how_2_body")],
+      [t("p_how_3_title"), t("p_how_3_body")],
+      [t("p_how_4_title"), t("p_how_4_body")],
+      [t("p_how_5_title"), t("p_how_5_body")]
+    ];
+    steps.forEach((step, i) => {
+      if (!stepData[i]) return;
+      const h4 = step.querySelector("h4");
+      const p = step.querySelector("p");
+      if (h4) h4.textContent = stepData[i][0];
+      if (p) p.textContent = stepData[i][1];
+    });
+    const alt = modal.querySelector(".vk-how-alt");
+    if (alt) alt.textContent = t("p_how_alt");
+    const closeBtn = modal.querySelector(".vk-how-close");
+    if (closeBtn) closeBtn.setAttribute("aria-label", t("p_close"));
+    modal.classList.add("open");
+  }
+  document.body.style.overflow = "hidden";
+};
+window.closeHowModal = () => {
+  document.getElementById("howModal").classList.remove("open");
+  document.body.style.overflow = "";
+};
+document.getElementById("howClose").addEventListener("click", closeHowModal);
+document.getElementById("howModal").addEventListener("click", (e) => {
+  if (e.target.id === "howModal") closeHowModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeHowModal();
+});
+
+function vkToast(msg) {
+  const old = document.getElementById("vkToast");
+  if (old) old.remove();
+  const el = document.createElement("div");
+  el.id = "vkToast";
+  el.textContent = msg;
+  el.style.cssText = "position:fixed;right:18px;bottom:18px;z-index:99999;padding:11px 16px;border-radius:10px;background:#172238;color:#fff;font:600 13px inherit;box-shadow:0 8px 30px rgba(0,0,0,.25);";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+window.copyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(location.href);
+    vkToast("Enlace copiado correctamente.");
+  } catch (e) {
+    prompt("Copie el siguiente enlace:", location.href);
+  }
+};
+window.shareProduct = async () => {
+  if (navigator.share) {
+    try { await navigator.share({ title: product.name, url: location.href }); } catch (e) {}
+  } else {
+    copyLink();
+  }
+};
+
+async function load() {
+  // 1) Generator product page
+  if (generatorKey && GENERATORS[generatorKey]) {
+    const g = GENERATORS[generatorKey];
+    product = {
+      name: g.name,
+      description: g.description,
+      category: g.category,
+      image: g.image,
+      images: [g.image],
+      price_cents: g.price_cents,
+      tags: g.tags,
+      _isGenerator: true,
+      generator_url: g.url,
+      size: "Según configuración",
+      file_size: "—",
+      updated_at: "—"
+    };
+    genUrl = g.url;
+    return;
+  }
+
+  // 2) API product
+  if (!id) {
+    showError("Producto no especificado.");
+    return;
+  }
+  try {
+    const r = await fetch(API + "/api/products", { headers: { Accept: "application/json" }, cache: "no-store" });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || "No se pudo cargar el producto");
+    product = (d.products || []).find(x => x.id === id);
+    if (!product) {
+      showError("Producto no encontrado.");
+      return;
+    }
+    if (product.generator_url) {
+      genUrl = product.generator_url;
+    }
+  } catch (e) {
+    console.error(e);
+    showError("No se pudo cargar el producto. Verifica la conexión con la API.");
+  }
+}
+function refreshProductLang() {
+  if (typeof applyI18nDom === "function") applyI18nDom();
+  if (product) {
+    try {
+      render();
+      applyProductOfferPrice();
+    } catch (e) {
+      try { translateProductDynamic(); } catch (e2) {}
+    }
+  }
+}
+
+document.addEventListener("vk-lang-changed", refreshProductLang);
+document.addEventListener("vk-lang-ready", refreshProductLang);
+
+async function startProductPage() {
+  // Carga producto e i18n en paralelo; solo pinta cuando el idioma está listo
+  const langPromise = (window.vkI18nReady && typeof window.vkI18nReady.then === "function")
+    ? window.vkI18nReady
+    : (typeof ensureLangTranslations === "function"
+        ? ensureLangTranslations(typeof currentLang !== "undefined" ? currentLang : "en")
+        : Promise.resolve());
+
+  const dataPromise = load();
+
+  try { await Promise.all([langPromise, dataPromise]); } catch (e) {}
+
+  if (product) {
+    try { render(); } catch (e) { console.error(e); }
+    try { await applyProductOfferPrice(); } catch (e) {}
+    try { await translateProductDynamic(); } catch (e) {}
+  }
+}
+
+function getPersonKeyForPrice() {
+  try {
+    let k = localStorage.getItem("vk_person_key");
+    if (!k) {
+      k = "p-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("vk_person_key", k);
+    }
+    return k;
+  } catch (e) {
+    return "anon";
+  }
+}
+
+function setCouponMsg(text, kind) {
+  const el = document.getElementById("couponMsg");
+  if (!el) return;
+  el.textContent = text || "";
+  el.className = "coupon-msg" + (kind ? " " + kind : "");
+}
+
+function renderPriceFromApi(d) {
+  const el = document.getElementById("prodPriceValue");
+  if (!el) return;
+  const original = Number(d.original_cents) || Number(product && product.price_cents) || 200;
+  const final = d.price_cents != null ? Number(d.price_cents) : original;
+  const offerPct = Number(d.offer_percent) || 0;
+  const couponPct = Number(d.coupon_percent) || 0;
+  const totalPct = Number(d.discount_percent) || offerPct || couponPct;
+  const hasDiscount = final < original && (offerPct > 0 || couponPct > 0 || totalPct > 0);
+
+  if (hasDiscount) {
+    const pill = (totalPct > 0 ? totalPct : Math.round((1 - final / original) * 100)) + "% OFF";
+    el.innerHTML =
+      '<div class="price-was-now">' +
+        '<span class="price-off-pill">' + pill + '</span>' +
+        '<span class="price-old">' + money(original) + ' USD</span>' +
+      '</div>' +
+      '<span class="price-sale">' + money(final) + ' <small style="font-size:14px;font-weight:700;color:#6b7280">USD</small></span>';
+  } else {
+    el.innerHTML = money(final) + ' <small>USD</small>';
+  }
+}
+
+/** Consulta /api/price (oferta + cupón) y actualiza el precio visible.
+ *  Aplica a publicaciones normales y a generadores. PayPal usa el mismo endpoint. */
+async function applyProductOfferPrice(couponCode) {
+  if (!product || !product.id) return null;
+  const api = (typeof API !== "undefined" ? API : (window.VEKTOLAB_API || "")).replace(/\/$/, "");
+  if (!api) return null;
+  try {
+    const qs = new URLSearchParams({ product: String(product.id) });
+    const code = String(couponCode != null ? couponCode : (window.vkCouponCode || "")).trim();
+    if (code) qs.set("coupon", code);
+    const person = getPersonKeyForPrice();
+    if (person) qs.set("person", person);
+
+    const r = await fetch(api + "/api/price?" + qs.toString(), {
+      headers: { Accept: "application/json" },
+      cache: "no-store"
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !(d.success || d.price_cents != null || d.amount != null)) return null;
+
+    // Normalizar campos si el API devuelve amount en USD
+    if (d.price_cents == null && d.amount != null) {
+      d.price_cents = Math.round(Number(d.amount) * 100);
+    }
+    if (d.original_cents == null && product.price_cents != null) {
+      d.original_cents = Number(product.price_cents) || 200;
+    }
+
+    renderPriceFromApi(d);
+    return d;
+  } catch (e) {
+    console.warn("[Vektolab] No se pudo cargar el precio en oferta:", e);
+    return null;
+  }
+}
+
+async function applyCouponFromInput() {
+  const input = document.getElementById("couponInput");
+  const btn = document.getElementById("couponApplyBtn");
+  if (!input) return;
+  const code = String(input.value || "").trim().toUpperCase();
+  if (!code) {
+    window.vkCouponCode = "";
+    setCouponMsg(t("p_coupon_empty") || "Ingresá un código de cupón.", "err");
+    await applyProductOfferPrice("");
+    return;
+  }
+  if (btn) btn.disabled = true;
+  setCouponMsg(t("p_coupon_checking") || "Verificando cupón…", "");
+  try {
+    window.vkCouponCode = code;
+    const d = await applyProductOfferPrice(code);
+    if (!d) {
+      window.vkCouponCode = "";
+      setCouponMsg(t("p_coupon_invalid") || "No se pudo aplicar el cupón.", "err");
+      await applyProductOfferPrice("");
+      return;
+    }
+    const couponOk = !!(d.coupon_applied || d.coupon_valid || d.coupon_percent > 0 ||
+      (d.coupon_code && String(d.coupon_code).toUpperCase() === code));
+    const hadDiscount = (Number(d.price_cents) < (Number(d.original_cents) || Number(product.price_cents) || 200)) &&
+      (Number(d.coupon_percent) > 0 || couponOk);
+
+    if (couponOk || hadDiscount) {
+      setCouponMsg(
+        (t("p_coupon_ok") || "Cupón aplicado") +
+          (d.coupon_percent ? " (−" + d.coupon_percent + "%)" : "") +
+          ". PayPal cobrará el precio mostrado.",
+        "ok"
+      );
+    } else if (d.coupon_error || d.error) {
+      window.vkCouponCode = "";
+      setCouponMsg(String(d.coupon_error || d.error), "err");
+      await applyProductOfferPrice("");
+    } else {
+      // API respondió pero sin reconocer el cupón
+      window.vkCouponCode = "";
+      setCouponMsg(t("p_coupon_invalid") || "Cupón no válido o no aplicable a este diseño.", "err");
+      await applyProductOfferPrice("");
+    }
+  } catch (e) {
+    window.vkCouponCode = "";
+    setCouponMsg(t("p_coupon_invalid") || "No se pudo aplicar el cupón.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function wireCouponUI() {
+  const input = document.getElementById("couponInput");
+  const btn = document.getElementById("couponApplyBtn");
+  if (!input || !btn) return;
+
+  // Prefill desde URL ?coupon= / ?cupon=
+  try {
+    const q = new URLSearchParams(location.search);
+    const fromUrl = (q.get("coupon") || q.get("cupon") || "").trim();
+    if (fromUrl) {
+      input.value = fromUrl.toUpperCase();
+      window.vkCouponCode = fromUrl.toUpperCase();
+      // aplicar en cuanto el precio base esté listo
+      setTimeout(function () { applyCouponFromInput(); }, 50);
+    } else if (window.vkCouponCode) {
+      input.value = String(window.vkCouponCode).toUpperCase();
+    }
+  } catch (e) {}
+
+  btn.onclick = function () { applyCouponFromInput(); };
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      applyCouponFromInput();
+    }
+  });
+  // Si borra el campo, quitar cupón activo
+  input.addEventListener("input", function () {
+    if (!String(input.value || "").trim() && window.vkCouponCode) {
+      window.vkCouponCode = "";
+      setCouponMsg("");
+      applyProductOfferPrice("");
+    }
+  });
+}
+
+startProductPage();
+</script>
+
+<script src="./asistente.js"></script>
+</body>
+</html>

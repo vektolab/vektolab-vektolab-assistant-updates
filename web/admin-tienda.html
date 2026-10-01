@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vektolab · Tienda · Administración</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{
+  --bg:#f7f8fa;--panel:#ffffff;--border:#e5e7eb;--text:#111827;--muted:#6b7280;--muted-2:#9ca3af;
+  --yellow:#f5c518;--yellow-hover:#eab308;--shadow-sm:0 1px 2px rgba(0,0,0,.04);--shadow:0 4px 16px rgba(0,0,0,.05);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  color:var(--text);background:var(--bg)
+}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased}
+.top{height:64px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:50}
+.top a{color:var(--muted);text-decoration:none;font-weight:700;font-size:13px}
+.top a:hover{color:var(--text)}
+.top strong{color:var(--text);font-size:15px;letter-spacing:-.2px}
+.wrap{max-width:1120px;margin:auto;padding:28px 20px 64px}
+h1{margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.4px}
+.sub{color:var(--muted);margin:0 0 22px;font-size:14px;line-height:1.5}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;padding:4px;background:#fff;border:1px solid var(--border);border-radius:12px;width:fit-content;max-width:100%}
+.tab{border:0;background:transparent;border-radius:9px;padding:9px 14px;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}
+.tab:hover{background:#f3f4f6;color:var(--text)}
+.tab.active{background:var(--text);color:#fff}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.stat b{display:block;font-size:22px;margin-top:6px;color:var(--text);text-transform:none;letter-spacing:-.3px}
+label{display:block;font-weight:700;font-size:12px;margin:14px 0 6px;color:#374151}
+input,textarea,select{width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 12px;font:inherit;background:#fff;color:var(--text)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#111827;box-shadow:0 0 0 3px rgba(17,24,39,.08)}
+textarea{min-height:90px;resize:vertical}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.full{grid-column:1/-1}
+.actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;align-items:center}
+button{border:0;border-radius:10px;padding:11px 16px;background:var(--text);color:#fff;font:inherit;font-weight:700;cursor:pointer;font-size:13px}
+button:hover{opacity:.92}
+.secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+.secondary:hover{background:#f9fafb}
+.danger{background:#dc2626}
+.danger:hover{background:#b91c1c}
+/* Switch activa */
+.switch-row{display:flex;align-items:center;gap:12px;margin-top:16px;padding:14px 16px;background:#f9fafb;border:1px solid var(--border);border-radius:12px}
+.switch-row .switch-text{flex:1}
+.switch-row .switch-text strong{display:block;font-size:13px;color:var(--text)}
+.switch-row .switch-text span{font-size:12px;color:var(--muted);font-weight:500}
+.switch{position:relative;width:44px;height:26px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;background:#d1d5db;border-radius:999px;cursor:pointer;transition:.15s}
+.switch .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.switch input:checked + .slider{background:#16a34a}
+.switch input:checked + .slider:before{transform:translateX(18px)}
+/* Product picker */
+.picker-box{border:1px solid var(--border);border-radius:12px;padding:14px;background:#fafafa}
+.picker-selected{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin-bottom:10px}
+.picker-selected .tag{display:inline-flex;align-items:center;gap:6px;background:#111827;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px}
+.picker-selected .tag button{background:transparent;border:0;color:#fff;padding:0;font-size:14px;cursor:pointer;line-height:1}
+.picker-actions{display:flex;gap:8px;flex-wrap:wrap}
+.picker-modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.45);align-items:center;justify-content:center;padding:20px}
+.picker-modal.open{display:flex}
+.picker-card{background:#fff;border-radius:16px;width:min(520px,100%);max-height:84vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden}
+.picker-card header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.picker-card header h3{margin:0;font-size:16px}
+.picker-card .picker-search{padding:12px 18px;border-bottom:1px solid var(--border)}
+.picker-card .picker-list{overflow:auto;padding:8px;flex:1}
+.picker-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.picker-item:hover{background:#f3f4f6}
+.picker-item.on{background:#ecfdf5;border-color:#86efac}
+.picker-item img{width:40px;height:40px;border-radius:8px;object-fit:cover;background:#f3f4f6}
+.picker-item .meta{flex:1;min-width:0}
+.picker-item .meta strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker-item .meta span{font-size:11px;color:var(--muted)}
+.picker-card footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.picker-card footer .count{font-size:12px;color:var(--muted);font-weight:600}
+.status{margin-top:14px;padding:12px;border-radius:10px;display:none;white-space:pre-wrap}
+.status.show{display:block}
+.ok{background:#ecfdf5;color:#065f46}
+.err{background:#fef2f2;color:#991b1b}
+.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
+th{font-size:12px;color:#6b7280;text-transform:uppercase}
+td img{width:58px;height:58px;object-fit:cover;border-radius:9px;background:#f3f4f6}
+.hidden{display:none}
+.note{font-size:12px;color:#6b7280;line-height:1.5}
+
+/* File upload boxes */
+.filebox{
+  border:2px dashed #d1d5db;
+  border-radius:12px;
+  padding:18px;
+  background:#fafafa;
+  text-align:center;
+  transition:.15s;
+  cursor:pointer;
+}
+.filebox:hover,.filebox.drag{border-color:#111827;background:#f3f4f6}
+.filebox input[type=file]{display:none}
+.filebox .label{font-weight:800;font-size:14px;margin-bottom:4px}
+.filebox .hint{font-size:12px;color:#6b7280}
+.filebox .selected{
+  margin-top:10px;
+  padding:8px 12px;
+  background:#ecfdf5;
+  color:#065f46;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  display:none;
+}
+.filebox.has-file .selected{display:block}
+.filebox.has-file{border-color:#10b981;background:#f0fdf4}
+.preview-img{
+  margin-top:10px;
+  max-width:120px;
+  max-height:120px;
+  border-radius:8px;
+  object-fit:cover;
+  display:none;
+}
+.filebox.has-file .preview-img{display:inline-block}
+
+@media(max-width:800px){
+  .grid{grid-template-columns:1fr 1fr}
+  .formgrid{grid-template-columns:1fr}
+  .full{grid-column:auto}
+}
+
+.img-thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:flex-start}
+.img-thumbs .thumb{position:relative;width:96px;height:96px;flex:0 0 96px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;background:#f3f4f6}
+.img-thumbs .thumb img{width:96px;height:96px;max-width:96px;max-height:96px;object-fit:cover;display:block}
+.img-thumbs .thumb button{position:absolute;top:4px;right:4px;width:24px;height:24px;border:0;border-radius:999px;background:rgba(0,0,0,.7);color:#fff;font-weight:800;cursor:pointer;padding:0;line-height:1;font-size:14px}
+.chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid #d1d5db;background:#f9fafb;font-size:13px;font-weight:700;cursor:pointer;user-select:none}
+.chip.on{background:#111827;color:#fff;border-color:#111827}
+.chip input{display:none}
+.preview-img{margin-top:10px;max-width:96px!important;max-height:96px!important;width:96px;height:96px;border-radius:8px;object-fit:cover;display:none}
+.filebox img{max-width:96px!important;max-height:96px!important;object-fit:cover}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.row2{grid-template-columns:1fr}}
+.note-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 14px;font-size:13px;color:#475569;margin:10px 0 0}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <a href="./index.html">← Vektolab</a>
+  <strong>Administrador de catálogo</strong>
+  <a style="margin-left:auto" href="./index.html">Ver catálogo</a>
+</header>
+
+<main class="wrap">
+  <h1>Catálogo · Administración</h1>
+  <p class="sub">Gestiona productos y precios. Las imágenes y STL se suben a R2 automáticamente.</p>
+
+  <section id="login" class="panel">
+    <label for="key">Clave de administrador</label>
+    <input id="key" type="password" autocomplete="off" placeholder="ADMIN_KEY de Cloudflare">
+    <div class="actions"><button id="enter">Entrar</button></div>
+    <div id="loginStatus" class="status"></div>
+  </section>
+
+  <div id="app" class="hidden">
+    <div class="tabs">
+      <button class="tab active" data-tab="products">Productos</button>
+      <button class="tab" data-tab="new">Nuevo producto</button>
+      <button class="tab" data-tab="offers">Ofertas</button>
+      <button class="tab" data-tab="coupons">Cupones</button>
+      <button class="tab" data-tab="taxonomy">Categorías</button>
+    </div>
+
+    <section id="products" class="panel tabpanel">
+      <div class="grid">
+        <div class="stat">Productos<b id="count">0</b></div>
+        <div class="stat">Precio más bajo<b id="low">$0.00</b></div>
+        <div class="stat">Precio más alto<b id="high">$0.00</b></div>
+        <div class="stat">Categorías<b id="cats">0</b></div>
+      </div>
+      <div class="tablewrap" style="margin-top:22px">
+        <table>
+          <thead>
+            <tr><th>Imagen</th><th>Producto</th><th>Tipo</th><th>Categoría</th><th>Precio</th><th></th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="new" class="panel tabpanel hidden">
+      <form id="productForm">
+        <input type="hidden" name="edit_id" id="editId" value="">
+        <input type="hidden" name="existing_stl" id="existingStl" value="">
+        <input type="hidden" name="existing_pdf" id="existingPdf" value="">
+        <input type="hidden" name="existing_3d" id="existing3d" value="">
+        <input type="hidden" name="existing_file_size" id="existingFileSize" value="">
+
+        <div class="formgrid">
+          <div>
+            <label>Nombre *</label>
+            <input name="name" required placeholder="Ej. Placa Castillo infantil">
+          </div>
+          <div>
+            <label>Categoría</label>
+            <input name="category" list="catList" value="General" placeholder="General, Decoración, Llaveros...">
+            <datalist id="catList">
+              <option value="General"><option value="Decoración"><option value="Llaveros">
+              <option value="Toppers"><option value="Mascotas"><option value="Carteles">
+              <option value="Juguetes"><option value="Infantil">
+            </datalist>
+          </div>
+          <div>
+            <label>Subcategoría</label>
+            <input name="subcategory" list="subcatList" placeholder="Cuadros, Floreros, Macetas...">
+            <datalist id="subcatList">
+              <option value="Cuadros"><option value="Floreros"><option value="Macetas"><option value="Lámparas">
+              <option value="Cumpleaños"><option value="Boda"><option value="Baby shower">
+              <option value="Perros"><option value="Gatos"><option value="Otras mascotas">
+              <option value="Nombres"><option value="Frases"><option value="Negocios"><option value="Iniciales">
+            </datalist>
+            <p class="note" style="margin-top:6px">Opcional. Ej: categoría «Decoración» → subcategoría «Floreros».</p>
+          </div>
+          <div>
+            <label>Precio (USD)</label>
+            <input name="price" type="number" min="0" step="0.01" value="2.00" required>
+          </div>
+          <div>
+            <label>Tipo de publicación</label>
+            <select name="product_type" id="productType">
+              <option value="stl">📦 STL (comprar y descargar)</option>
+              <option value="generator">⚙️ Generador (personalizar y descargar)</option>
+            </select>
+          </div>
+
+          <div class="full" id="generatorUrlWrap" style="display:none">
+            <label>URL del generador *</label>
+            <input name="generator_url" id="generatorUrl" placeholder="generadores/cartel-luna.html">
+            <p class="note" style="margin-top:6px">Ruta relativa. El botón «Personalizar y descargar» abrirá esta URL.</p>
+          </div>
+
+          <div class="full">
+            <label>Descripción (aparece en la ficha)</label>
+            <textarea name="description" placeholder="Descripción completa del diseño..."></textarea>
+          </div>
+
+          <div class="full">
+            <label>Etiquetas (separadas por coma)</label>
+            <input name="tags" placeholder="Decoración, Infantil, Placa, Personalizable, Castillo">
+            <p class="note" style="margin-top:6px">Se muestran como chips en la ficha de producto.</p>
+          </div>
+
+          <div class="full">
+            <label>Palabras clave ocultas (para el buscador)</label>
+            <input name="keywords" placeholder="castillo, princesa, habitación, niña, corona, estrellas, luna">
+            <p class="note" style="margin-top:6px">No se muestran al usuario. Mejoran la búsqueda inteligente.</p>
+          </div>
+
+          <div>
+            <label>Tamaño del modelo</label>
+            <input name="size_model" placeholder="180 mm x 180 mm x 12 mm">
+          </div>
+          <div>
+            <label>Capas recomendadas</label>
+            <input name="layer_height" placeholder="0.2 mm" value="0.2 mm">
+          </div>
+          <div>
+            <label>Material sugerido</label>
+            <input name="material" list="matList" placeholder="PLA" value="PLA">
+            <datalist id="matList">
+              <option value="PLA"><option value="PETG"><option value="ABS">
+              <option value="TPU"><option value="Resina">
+            </datalist>
+          </div>
+          <div>
+            <label>Licencia</label>
+            <select name="license" id="licenseSelect">
+              <option value="personal">Uso personal</option>
+              <option value="commercial">Uso comercial permitido</option>
+              <option value="cc-by">Creative Commons BY</option>
+              <option value="cc-by-nc">Creative Commons BY-NC</option>
+              <option value="cc-by-sa">Creative Commons BY-SA</option>
+              <option value="no-derivatives">Sin obras derivadas</option>
+            </select>
+            <p class="note" id="licenseHelp" style="margin-top:6px"></p>
+          </div>
+          <div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" name="patreon_exclusive" id="patreonExclusive" style="width:auto">
+              Descarga exclusiva para miembros de Patreon (sin opción de compra por PayPal)
+            </label>
+            <p class="note" style="margin-top:6px">Si se deja sin marcar, la publicación podrá comprarse también de forma individual por PayPal, además de la descarga gratuita para miembros de Patreon.</p>
+          </div>
+
+          <!-- IMAGEN -->
+          <div class="full">
+            <label>Fotos del producto (podés subir varias)</label>
+            <div class="filebox" id="imageBox">
+              <div class="label">📷 Seleccionar una o más imágenes</div>
+              <div class="hint">PNG, JPG, WEBP · la primera será la portada del catálogo</div>
+              <input type="file" id="imageFile" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" multiple>
+              <div class="selected" id="imageSelected"></div>
+            </div>
+            <div class="img-thumbs" id="imageThumbs"></div>
+            <input type="hidden" id="existingImage" name="existing_image" value="">
+            <input type="hidden" id="existingImagesJson" name="existing_images_json" value="[]">
+          </div>
+
+          <!-- STL -->
+          <div id="stlWrap">
+            <label>Archivo STL</label>
+            <div class="filebox" id="stlBox">
+              <div class="label">📦 Seleccionar archivo STL</div>
+              <div class="hint">Solo .stl — el tamaño se detecta solo</div>
+              <input type="file" id="stlFile" accept=".stl,model/stl,application/sla">
+              <div class="selected" id="stlSelected"></div>
+            </div>
+          </div>
+
+          <!-- PDF instrucciones -->
+          <div>
+            <label>PDF de instrucciones (opcional)</label>
+            <div class="filebox" id="pdfBox">
+              <div class="label">📄 Seleccionar PDF</div>
+              <div class="hint">Instrucciones de impresión / montaje</div>
+              <input type="file" id="pdfFile" accept="application/pdf,.pdf">
+              <div class="selected" id="pdfSelected"></div>
+            </div>
+          </div>
+
+          <!-- Visor 3D -->
+          <div>
+            <label>Visor 3D / modelo 3MF (opcional)</label>
+            <div class="filebox" id="model3dBox">
+              <div class="label">🧊 Seleccionar 3MF / GLB</div>
+              <div class="hint">Para que el usuario vea el modelo en 3D</div>
+              <input type="file" id="model3dFile" accept=".3mf,.glb,.gltf,model/3mf,model/gltf-binary">
+              <div class="selected" id="model3dSelected"></div>
+            </div>
+          </div>
+
+          <!-- Materiales y equipo recomendado -->
+          <div class="full">
+            <label>Materiales y equipo recomendado (opcional)</label>
+            <p class="note" style="margin-top:-2px;margin-bottom:10px">Se muestran en la ficha de este diseño, con un botón de compra individual por cada producto. Si no se agrega ninguno, la sección no aparece.</p>
+            <div id="materialesList"></div>
+            <button type="button" class="secondary" id="addMaterial" style="margin-top:4px">+ Agregar producto recomendado</button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="submitBtn">Crear producto</button>
+          <button type="button" class="secondary" id="cancel">Cancelar</button>
+        </div>
+        <div id="formStatus" class="status"></div>
+      </form>
+      <p class="note" style="margin-top:16px">
+        <strong>STL:</strong> imagen + STL se suben a R2. El tamaño del archivo se rellena solo.<br>
+        <strong>Generador:</strong> imagen + URL del generador. El botón de la ficha lleva al generador.<br>
+        <strong>PDF / 3MF:</strong> opcionales. El 3MF se usa para la Vista 3D en la ficha.<br>
+        <strong>Importante:</strong> el Worker necesita un binding de R2 llamado <code>R2</code> o <code>FILES</code>.
+      </p>
+</section>
+
+    <section id="offers" class="panel tabpanel hidden">
+      <h2 style="margin:0 0 8px;font-size:20px">Ofertas por categoría / subcategoría</h2>
+      <p class="sub" style="margin-bottom:16px">Definí un % de descuento (0–100) y elegí a qué categorías o subcategorías aplica. PayPal cobrará el precio con descuento.</p>
+      <form id="offerForm">
+        <input type="hidden" id="offerEditId" value="">
+        <div class="formgrid">
+          <div><label>Nombre de la oferta</label><input id="offerName" placeholder="Ej. Promo decoración" required></div>
+          <div><label>% de descuento (0–100)</label><input id="offerPercent" type="number" min="0" max="100" step="1" value="40" required></div>
+          <div>
+            <label>Aplica a</label>
+            <select id="offerScopeType">
+              <option value="categories">Categorías</option>
+              <option value="subcategories">Subcategorías</option>
+              <option value="products">Diseños (productos)</option>
+              <option value="all">Todo el catálogo</option>
+            </select>
+          </div>
+          <div class="row2">
+            <div><label>Desde (opcional)</label><input id="offerStarts" type="datetime-local"></div>
+            <div><label>Hasta (opcional)</label><input id="offerEnds" type="datetime-local"></div>
+          </div>
+          <div class="full">
+            <label>Selección (qué entra en la oferta)</label>
+            <div id="offerScopeChips" class="chip-list" data-selected=""></div>
+            <div id="offerProductPicker" class="picker-box" style="display:none;margin-top:10px">
+              <div class="picker-selected" id="offerSelectedTags"></div>
+              <div class="picker-actions">
+                <button type="button" class="secondary" id="offerOpenPicker">🔍 Buscar y elegir diseños</button>
+              </div>
+              <p class="note" style="margin-top:8px;margin-bottom:0">Buscá por nombre, marcá los que quieras y tocá <strong>Listo</strong>.</p>
+            </div>
+            <div class="note-box" id="offerScopeHint">Elegí categorías o subcategorías con los chips. Si elegís “Diseños”, usá el buscador.</div>
+          </div>
+          <div class="full">
+            <div class="switch-row">
+              <div class="switch-text">
+                <strong>Oferta activa</strong>
+                <span>Si está apagada, no se aplica el descuento en la tienda ni en PayPal.</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="offerActive" checked><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">Guardar oferta</button>
+          <button type="button" class="secondary" id="offerReset">Limpiar</button>
+        </div>
+        <div id="offerStatus" class="status"></div>
+      </form>
+      <div class="tablewrap" style="margin-top:22px">
+        <table>
+          <thead><tr><th>Nombre</th><th>%</th><th>Alcance</th><th>Fechas</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="offersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="coupons" class="panel tabpanel hidden">
+      <h2 style="margin:0 0 8px;font-size:20px">Cupones de descuento</h2>
+      <p class="sub" style="margin-bottom:16px">Código, % de descuento, usos por persona, fechas, monto mínimo y alcance (diseños / categorías / subcategorías).</p>
+      <form id="couponForm">
+        <input type="hidden" id="couponEditId" value="">
+        <div class="formgrid">
+          <div><label>Código</label><input id="couponCode" placeholder="VERANO40" required style="text-transform:uppercase"></div>
+          <div><label>% de descuento (0–100)</label><input id="couponPercent" type="number" min="0" max="100" step="1" value="20" required></div>
+          <div><label>Usos totales (0 = ilimitado)</label><input id="couponMaxTotal" type="number" min="0" step="1" value="0"></div>
+          <div><label>Usos por persona</label><input id="couponMaxPerson" type="number" min="0" step="1" value="1"></div>
+          <div><label>Monto mínimo (USD)</label><input id="couponMinUsd" type="number" min="0" step="0.01" value="0"></div>
+          <div>
+            <label>Aplica a</label>
+            <select id="couponScopeType">
+              <option value="all">Todo el catálogo</option>
+              <option value="categories">Categorías</option>
+              <option value="subcategories">Subcategorías</option>
+              <option value="products">Diseños seleccionados</option>
+            </select>
+          </div>
+          <div class="row2 full">
+            <div><label>Fecha inicio</label><input id="couponStarts" type="datetime-local"></div>
+            <div><label>Fecha fin</label><input id="couponEnds" type="datetime-local"></div>
+          </div>
+          <div class="full">
+            <label>Selección (dónde vale el cupón)</label>
+            <div id="couponScopeChips" class="chip-list" data-selected=""></div>
+            <div id="couponProductPicker" class="picker-box" style="display:none;margin-top:10px">
+              <div class="picker-selected" id="couponSelectedTags"></div>
+              <div class="picker-actions">
+                <button type="button" class="secondary" id="couponOpenPicker">🔍 Buscar y elegir diseños</button>
+              </div>
+              <p class="note" style="margin-top:8px;margin-bottom:0">Buscá por nombre, marcá los diseños y tocá <strong>Listo</strong>.</p>
+            </div>
+          </div>
+          <div class="full">
+            <div class="switch-row">
+              <div class="switch-text">
+                <strong>Cupón activo</strong>
+                <span>Si está apagado, el código no se puede usar en la tienda.</span>
+              </div>
+              <label class="switch"><input type="checkbox" id="couponActive" checked><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">Guardar cupón</button>
+          <button type="button" class="secondary" id="couponReset">Limpiar</button>
+        </div>
+        <div id="couponStatus" class="status"></div>
+      </form>
+      <div style="margin-top:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+          <div>
+            <h3 style="margin:0;font-size:16px">Todos los cupones</h3>
+            <p class="sub" style="margin:4px 0 0">Lista completa: activos, inactivos, futuros y vencidos. Podés editarlos o eliminarlos. <span style="opacity:.5;font-size:11px">v3-catalog</span></p>
+          </div>
+          <button type="button" class="secondary" id="refreshCouponsBtn">Actualizar</button>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Código</th><th>%</th><th>Estado</th><th>Usos</th><th>Mín.</th><th>Alcance</th><th>Fechas</th><th></th></tr></thead>
+            <tbody id="couponsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="taxonomy" class="panel tabpanel hidden">
+      <h2 style="margin:0 0 8px;font-size:20px">Categorías y subcategorías</h2>
+      <p class="sub" style="margin-bottom:16px">Creá categorías y subcategorías; quedan guardadas para elegirlas al publicar productos y en ofertas/cupones.</p>
+      <div class="formgrid">
+        <div>
+          <label>Nueva categoría</label>
+          <input id="newCatName" placeholder="Ej. Herramientas">
+          <div class="actions"><button type="button" id="addCatBtn">Crear categoría</button></div>
+        </div>
+        <div>
+          <label>Nueva subcategoría</label>
+          <input id="newSubName" placeholder="Ej. Destornilladores">
+          <label style="margin-top:10px">De la categoría</label>
+          <select id="newSubParent"></select>
+          <div class="actions"><button type="button" id="addSubBtn">Crear subcategoría</button></div>
+        </div>
+      </div>
+      <div id="taxStatus" class="status"></div>
+      <div class="tablewrap" style="margin-top:22px">
+        <table>
+          <thead><tr><th>Tipo</th><th>Nombre</th><th>Padre</th><th></th></tr></thead>
+          <tbody id="taxBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<div class="picker-modal" id="productPickerModal" aria-hidden="true">
+  <div class="picker-card" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <header>
+      <h3 id="pickerTitle">Elegir diseños</h3>
+      <button type="button" class="secondary" id="pickerClose" style="padding:6px 10px">✕</button>
+    </header>
+    <div class="picker-search">
+      <input type="search" id="pickerSearch" placeholder="Buscar por nombre, categoría…" autocomplete="off">
+    </div>
+    <div class="picker-list" id="pickerList"></div>
+    <footer>
+      <span class="count" id="pickerCount">0 seleccionados</span>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="secondary" id="pickerCancel">Cancelar</button>
+        <button type="button" id="pickerOk">Listo</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+
+<style>
+.material-row{display:grid;grid-template-columns:72px 1fr 1fr;gap:10px;align-items:start;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:10px;background:#fafafa}
+.material-row .m-thumb{width:72px;height:72px;border-radius:9px;border:1px dashed #d1d5db;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;font-size:11px;color:#9ca3af;text-align:center;line-height:1.3}
+.material-row .m-thumb img{width:100%;height:100%;object-fit:cover}
+.material-row .m-fields{display:grid;gap:8px}
+.material-row .m-fields input{padding:9px 10px;font-size:13px}
+.material-row .m-remove-wrap{display:flex;justify-content:flex-end}
+.material-row .m-remove{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;padding:6px 10px;font-size:12px;font-weight:800;border-radius:8px;cursor:pointer}
+@media(max-width:700px){.material-row{grid-template-columns:1fr}}
+</style>
+
+<script src="./store-config.js"></script>
+<script>
+// Fallback por si store-config.js no carga o el SW sirve una versión vieja
+const API = String(window.VEKTOLAB_API || 'https://vektolab-api.vektocreativeteam.workers.dev').replace(/\/$/, '');
+let key = '';
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+function status(el, text, ok = false) {
+  el.textContent = text;
+  el.className = 'status show ' + (ok ? 'ok' : 'err');
+}
+
+function money(c) {
+  return '$' + (Number(c || 0) / 100).toFixed(2);
+}
+
+function auth() {
+  return { 'Authorization': 'Bearer ' + key };
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+/** Rutas de cupones neutrales (evitan bloqueadores que filtran "coupon"). */
+const COUPON_LIST = '/api/admin/catalog?section=codes';
+function couponItemPath(id) {
+  return '/api/admin/catalog?section=codes&id=' + encodeURIComponent(id);
+}
+window.VK_ADMIN_VERSION = '2026-09-14-codes-v3';
+
+async function call(path, opts = {}) {
+  if (!API) {
+    throw new Error('API no configurada. Revisá store-config.js (VEKTOLAB_API).');
+  }
+  if (!key && String(path).indexOf('/api/admin/') === 0) {
+    throw new Error('Ingresá la clave de administrador antes de continuar.');
+  }
+  const headers = { ...(opts.headers || {}) };
+  if (key) headers['Authorization'] = 'Bearer ' + key;
+  // No forzamos Content-Type si es FormData
+  var method = (opts.method || 'GET').toUpperCase();
+  if (!(opts.body instanceof FormData) && opts.body != null && method !== 'GET' && method !== 'HEAD') {
+    headers['Content-Type'] = 'application/json';
+  }
+  const url = API + path;
+  let r;
+  try {
+    r = await fetch(url, {
+      method: method || opts.method || 'GET',
+      headers,
+      body: opts.body,
+      mode: 'cors',
+      cache: 'no-store',
+      credentials: 'omit'
+    });
+  } catch (netErr) {
+    throw new Error(
+      'No se pudo conectar con la API.\n' +
+      'URL: ' + url + '\n' +
+      'Causas frecuentes:\n' +
+      '1) Extensión bloqueadora (uBlock/AdGuard) — probá ventana de Incógnito\n' +
+      '2) Service Worker viejo — en DevTools → Application → Service Workers → Unregister, luego Ctrl+F5\n' +
+      '3) ADMIN_KEY incorrecta o Worker caído\n' +
+      'Detalle: ' + (netErr && netErr.message ? netErr.message : String(netErr))
+    );
+  }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.success === false) {
+    const msg = d.error || d.message || ('Error HTTP ' + r.status);
+    if (/no such table|SQLITE_ERROR/i.test(String(msg))) {
+      throw new Error(
+        msg + '\n\nFalta la tabla en D1. Cloudflare → D1 → Console → ejecutá el SQL de README-OFERTAS-CUPONES.'
+      );
+    }
+    throw new Error(msg);
+  }
+  return d;
+}
+
+// ---------- File boxes ----------
+function setupFileBox(boxId, inputId, selectedId, previewId) {
+  const box = $(boxId);
+  const input = $(inputId);
+  const selected = $(selectedId);
+  const preview = previewId ? $(previewId) : null;
+
+  box.onclick = () => input.click();
+
+  box.ondragover = e => { e.preventDefault(); box.classList.add('drag'); };
+  box.ondragleave = () => box.classList.remove('drag');
+  box.ondrop = e => {
+    e.preventDefault();
+    box.classList.remove('drag');
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  };
+
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) {
+      box.classList.remove('has-file');
+      selected.textContent = '';
+      if (preview) preview.style.display = 'none';
+      return;
+    }
+    box.classList.add('has-file');
+    selected.textContent = '✓ ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+    if (preview && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      preview.style.display = 'inline-block';
+    }
+  };
+}
+
+
+setupFileBox('#imageBox', '#imageFile', '#imageSelected', null);
+setupFileBox('#stlBox', '#stlFile', '#stlSelected', null);
+setupFileBox('#pdfBox', '#pdfFile', '#pdfSelected', null);
+setupFileBox('#model3dBox', '#model3dFile', '#model3dSelected', null);
+
+// ---------- Materiales y equipo recomendado ----------
+let materialesState = []; // { nombre, nota, precio, url, imagen, file }
+
+function renderMaterialesRows() {
+  const wrap = $('#materialesList');
+  wrap.innerHTML = materialesState.map((m, i) => `
+    <div class="material-row" data-idx="${i}">
+      <div class="m-thumb" data-thumb="${i}">${m.imagen ? `<img src="${esc(m.imagen)}" alt="">` : '📷<br>Foto'}</div>
+      <input type="file" accept="image/png,image/jpeg,image/webp" data-mfile="${i}" style="display:none">
+      <div class="m-fields">
+        <input type="text" placeholder="Nombre del producto (ej. Filamento PLA Basic Blanco)" data-mfield="nombre" data-midx="${i}" value="${esc(m.nombre || '')}">
+        <input type="text" placeholder="Detalle, por ejemplo: Refill 1kg" data-mfield="nota" data-midx="${i}" value="${esc(m.nota || '')}">
+        <input type="text" placeholder="Precio a mostrar, por ejemplo $19,99 (opcional)" data-mfield="precio" data-midx="${i}" value="${esc(m.precio || '')}">
+        <input type="url" placeholder="Enlace de compra (afiliado)" data-mfield="url" data-midx="${i}" value="${esc(m.url || '')}">
+      </div>
+      <div class="m-remove-wrap"><button type="button" class="m-remove" data-mremove="${i}">Quitar</button></div>
+    </div>
+  `).join('');
+
+  wrap.querySelectorAll('[data-mfield]').forEach(inp => {
+    inp.oninput = () => {
+      const idx = Number(inp.dataset.midx);
+      materialesState[idx][inp.dataset.mfield] = inp.value;
+    };
+  });
+  wrap.querySelectorAll('[data-mremove]').forEach(btn => {
+    btn.onclick = () => {
+      materialesState.splice(Number(btn.dataset.mremove), 1);
+      renderMaterialesRows();
+    };
+  });
+  wrap.querySelectorAll('[data-thumb]').forEach(thumb => {
+    thumb.onclick = () => wrap.querySelector(`[data-mfile="${thumb.dataset.thumb}"]`).click();
+  });
+  wrap.querySelectorAll('[data-mfile]').forEach(inp => {
+    inp.onchange = () => {
+      const idx = Number(inp.dataset.mfile);
+      const file = inp.files[0];
+      if (!file) return;
+      materialesState[idx].file = file;
+      materialesState[idx].imagen = URL.createObjectURL(file);
+      renderMaterialesRows();
+    };
+  });
+}
+
+$('#addMaterial').onclick = () => {
+  materialesState.push({ nombre: '', nota: '', precio: '', url: '', imagen: '', file: null });
+  renderMaterialesRows();
+};
+renderMaterialesRows();
+
+async function resolveMaterialesForSave(slug) {
+  const out = [];
+  for (const m of materialesState) {
+    if (!m.nombre && !m.url) continue; // omit empty rows
+    let imagen = m.imagen && !m.imagen.startsWith('blob:') ? m.imagen : '';
+    if (m.file) {
+      const up = await uploadFile(m.file, 'material', slug);
+      imagen = up.url;
+    }
+    out.push({ nombre: m.nombre || '', nota: m.nota || '', precio: m.precio || '', url: m.url || '', imagen });
+  }
+  return out;
+}
+
+const LICENSE_HELP = {
+  personal: 'Solo uso personal. No se permite vender, redistribuir ni usar comercialmente el modelo.',
+  commercial: 'Uso comercial permitido. Puedes vender impresiones físicas. No redistribuir el archivo digital.',
+  'cc-by': 'Creative Commons BY: puedes usar, modificar y comercializar citando al autor.',
+  'cc-by-nc': 'Creative Commons BY-NC: uso y modificación con atribución. Sin uso comercial.',
+  'cc-by-sa': 'Creative Commons BY-SA: uso y modificación con atribución. Derivados bajo la misma licencia.',
+  'no-derivatives': 'Puedes usar el diseño tal cual. No se permiten modificaciones ni obras derivadas.'
+};
+
+function updateLicenseHelp() {
+  const v = ($('#licenseSelect') || {}).value || 'personal';
+  const el = $('#licenseHelp');
+  if (el) el.textContent = LICENSE_HELP[v] || '';
+}
+document.getElementById('licenseSelect')?.addEventListener('change', updateLicenseHelp);
+updateLicenseHelp();
+
+function syncTypeUI() {
+  const isGen = ($('#productType') || {}).value === 'generator';
+  const wrap = $('#generatorUrlWrap');
+  const stlWrap = $('#stlWrap');
+  if (wrap) wrap.style.display = isGen ? 'block' : 'none';
+  if (stlWrap) stlWrap.style.opacity = isGen ? '0.55' : '1';
+}
+document.getElementById('productType')?.addEventListener('change', syncTypeUI);
+syncTypeUI();
+
+function resetForm() {
+  const form = $('#productForm');
+  form.reset();
+  form.category.value = 'General';
+  form.subcategory.value = '';
+  form.price.value = '2.00';
+  form.product_type.value = 'stl';
+  form.layer_height.value = '0.2 mm';
+  form.material.value = 'PLA';
+  form.license.value = 'personal';
+  $('#patreonExclusive').checked = false;
+  $('#editId').value = '';
+  materialesState = [];
+  renderMaterialesRows();
+  $('#existingImage').value = '';
+  if ($('#existingImagesJson')) $('#existingImagesJson').value = '[]';
+  if (typeof renderImageThumbs === 'function') renderImageThumbs([]);
+  $('#existingStl').value = '';
+  $('#existingPdf').value = '';
+  $('#existing3d').value = '';
+  $('#existingFileSize').value = '';
+  ['#imageFile','#stlFile','#pdfFile','#model3dFile'].forEach(s => { const el=$(s); if(el) el.value=''; });
+  ['#imageBox','#stlBox','#pdfBox','#model3dBox'].forEach(s => $(s)?.classList.remove('has-file'));
+  ['#imageSelected','#stlSelected','#pdfSelected','#model3dSelected'].forEach(s => { const el=$(s); if(el) el.textContent=''; });
+  const prev = $('#imagePreview'); if (prev) { prev.style.display = 'none'; prev.removeAttribute('src'); }
+  $('#formStatus').className = 'status';
+  $('#submitBtn').textContent = 'Crear producto';
+  syncTypeUI();
+  updateLicenseHelp();
+}
+
+// Edit product
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-edit]');
+  if (!btn) return;
+  try {
+    const p = JSON.parse(btn.getAttribute('data-edit'));
+    const form = $('#productForm');
+    form.name.value = p.name || '';
+    form.category.value = p.category || 'General';
+    form.subcategory.value = p.subcategory || '';
+    form.price.value = ((Number(p.price_cents) || 0) / 100).toFixed(2);
+    form.description.value = p.description || '';
+    form.product_type.value = p.product_type === 'generator' ? 'generator' : 'stl';
+    form.generator_url.value = p.generator_url || '';
+    form.tags.value = p.tags || '';
+    form.keywords.value = p.keywords || '';
+    form.size_model.value = p.size_model || '';
+    form.layer_height.value = p.layer_height || '0.2 mm';
+    form.material.value = p.material || 'PLA';
+    form.license.value = p.license || 'personal';
+    $('#patreonExclusive').checked = !!(Number(p.patreon_exclusive) || p.patreon_exclusive === true);
+    $('#editId').value = p.id || '';
+    try {
+      const parsed = JSON.parse(p.materiales_json || '[]');
+      materialesState = Array.isArray(parsed) ? parsed.map(m => ({ nombre: m.nombre || '', nota: m.nota || '', precio: m.precio || '', url: m.url || '', imagen: m.imagen || '', file: null })) : [];
+    } catch (e) {
+      materialesState = [];
+    }
+    renderMaterialesRows();
+    $('#existingImage').value = p.image || '';
+    let imgs = [];
+    try { imgs = JSON.parse(p.images_json || '[]'); } catch (e) { imgs = []; }
+    if (!Array.isArray(imgs) || !imgs.length) { if (p.image) imgs = [p.image]; }
+    if ($('#existingImagesJson')) $('#existingImagesJson').value = JSON.stringify(imgs);
+    if (typeof renderImageThumbs === 'function') renderImageThumbs(imgs);
+    $('#existingStl').value = p.stl_path || '';
+    $('#existingPdf').value = p.pdf_url || '';
+    $('#existing3d').value = p.model_3d_url || '';
+    $('#existingFileSize').value = p.file_size || '';
+    if (p.stl_path) {
+      $('#stlBox').classList.add('has-file');
+      $('#stlSelected').textContent = '✓ Ya subido' + (p.file_size ? ' (' + p.file_size + ')' : '');
+    }
+    if (p.pdf_url) {
+      $('#pdfBox').classList.add('has-file');
+      $('#pdfSelected').textContent = '✓ PDF ya subido';
+    }
+    if (p.model_3d_url) {
+      $('#model3dBox').classList.add('has-file');
+      $('#model3dSelected').textContent = '✓ Modelo 3D ya subido';
+    }
+    if (imgs.length || p.image) {
+      $('#imageBox').classList.add('has-file');
+      $('#imageSelected').textContent = '✓ ' + (imgs.length || 1) + ' imagen(es)';
+    }
+    // Vista previa siempre en miniatura (imageThumbs), nunca a tamaño completo
+
+    $('#submitBtn').textContent = 'Guardar cambios';
+    syncTypeUI();
+    updateLicenseHelp();
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(x => x.classList.add('hidden'));
+    const newTab = document.querySelector('[data-tab="new"]');
+    if (newTab) { newTab.classList.add('active'); $('#new').classList.remove('hidden'); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    alert('No se pudo cargar el producto para editar');
+  }
+});
+
+// ---------- Login ----------
+$('#enter').onclick = async () => {
+  key = $('#key').value.trim();
+  if (!key) return status($('#loginStatus'), 'Escribe la clave.');
+  try {
+    await call('/api/admin/products');
+    $('#login').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    load();
+  } catch (e) {
+    status($('#loginStatus'), 'Clave incorrecta o API no disponible.\n' + e.message);
+  }
+};
+$('#key').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
+
+// ---------- Load products ----------
+async function load() {
+  try {
+    const d = await call('/api/admin/products');
+    const ps = d.products || [];
+    $('#count').textContent = ps.length;
+    $('#cats').textContent = new Set(ps.map(p => p.category).filter(Boolean)).size;
+    const vals = ps.map(p => Number(p.price_cents) || 0);
+    $('#low').textContent = vals.length ? money(Math.min(...vals)) : '$0.00';
+    $('#high').textContent = vals.length ? money(Math.max(...vals)) : '$0.00';
+
+    $('#rows').innerHTML = ps.map(p => {
+      const isGen = p.product_type === 'generator' || !!p.generator_url;
+      const typeLabel = isGen ? '⚙️ Generador' : '📦 STL';
+      const editPayload = {
+        id: p.id, name: p.name, description: p.description || '',
+        price_cents: p.price_cents, category: p.category || 'General',
+        subcategory: p.subcategory || '',
+        image: p.image || '', stl_path: p.stl_path || '',
+        product_type: isGen ? 'generator' : 'stl',
+        generator_url: p.generator_url || '',
+        tags: p.tags || '', keywords: p.keywords || '',
+        size_model: p.size_model || '', layer_height: p.layer_height || '',
+        material: p.material || '', license: p.license || 'personal',
+        pdf_url: p.pdf_url || '', model_3d_url: p.model_3d_url || '',
+        file_size: p.file_size || '', patreon_exclusive: p.patreon_exclusive || 0,
+        materiales_json: p.materiales_json || '[]'
+      };
+      return `
+      <tr>
+        <td>${p.image ? `<img src="${esc(p.image)}" alt="">` : '—'}</td>
+        <td><b>${esc(p.name)}</b><br><span class="note">${esc(p.id)}</span>${isGen && p.generator_url ? `<br><span class="note">→ ${esc(p.generator_url)}</span>` : ''}</td>
+        <td>${typeLabel}</td>
+        <td>${esc(p.category || 'General')}${p.subcategory ? `<br><span class="note">${esc(p.subcategory)}</span>` : ''}</td>
+        <td>${money(p.price_cents)}</td>
+        <td style="white-space:nowrap">
+          <button type="button" class="secondary" data-edit='${esc(JSON.stringify(editPayload))}'>Editar</button>
+          <button data-del="${esc(p.id)}" class="danger">Eliminar</button>
+        </td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6">No hay productos.</td></tr>';
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// ---------- Upload helper ----------
+async function uploadFile(file, type, productSlug) {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('type', type);
+  form.append('product', productSlug || 'general');
+
+  const r = await fetch(API + '/api/admin/upload', {
+    method: 'POST',
+    headers: auth(),
+    body: form
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.success) throw new Error(d.error || 'Error al subir archivo');
+  return d; // { key, url, type, filename, file_size, ... }
+}
+
+// ---------- Create / Update ----------
+$('#productForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const name = (f.get('name') || '').trim();
+  const price = Math.round(Number(f.get('price')) * 100);
+  const productType = f.get('product_type') === 'generator' ? 'generator' : 'stl';
+  const generatorUrl = (f.get('generator_url') || '').trim();
+  const editId = (f.get('edit_id') || '').trim();
+
+  if (!name) return status($('#formStatus'), 'El nombre es obligatorio.');
+  if (!Number.isFinite(price) || price < 0) return status($('#formStatus'), 'Precio inválido.');
+  if (productType === 'generator' && !generatorUrl) {
+    return status($('#formStatus'), 'Para generadores debes indicar la URL del generador.');
+  }
+
+  const imageFiles = Array.from(($('#imageFile') && $('#imageFile').files) || []);
+  const stlFile = $('#stlFile').files[0];
+  const pdfFile = $('#pdfFile').files[0];
+  const model3dFile = $('#model3dFile').files[0];
+
+  const btn = $('#submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+
+  try {
+    const slug = name.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'producto';
+
+    let imageUrl = f.get('existing_image') || '';
+    let stlPath = f.get('existing_stl') || '';
+    let pdfUrl = f.get('existing_pdf') || '';
+    let model3dUrl = f.get('existing_3d') || '';
+    let fileSize = f.get('existing_file_size') || '';
+
+    let imagesList = [];
+    try { imagesList = JSON.parse(f.get('existing_images_json') || '[]'); } catch (e) { imagesList = []; }
+    if (!Array.isArray(imagesList)) imagesList = [];
+    if (imageFiles.length) {
+      for (let i = 0; i < imageFiles.length; i++) {
+        status($('#formStatus'), 'Subiendo imagen ' + (i + 1) + '/' + imageFiles.length + '...', true);
+        const up = await uploadFile(imageFiles[i], 'image', slug + '-' + (i + 1));
+        if (up && up.url) imagesList.push(up.url);
+      }
+      if (imagesList.length) imageUrl = imagesList[0];
+    }
+    if (stlFile) {
+      status($('#formStatus'), 'Subiendo archivo STL...', true);
+      const up = await uploadFile(stlFile, 'stl', slug);
+      stlPath = up.key || up.url;
+      if (up.file_size) fileSize = up.file_size;
+    }
+    if (pdfFile) {
+      status($('#formStatus'), 'Subiendo PDF...', true);
+      const up = await uploadFile(pdfFile, 'pdf', slug);
+      pdfUrl = up.url;
+    }
+    if (model3dFile) {
+      status($('#formStatus'), 'Subiendo modelo 3D...', true);
+      const up = await uploadFile(model3dFile, 'model3d', slug);
+      model3dUrl = up.url;
+    }
+
+    status($('#formStatus'), editId ? 'Guardando cambios...' : 'Guardando producto...', true);
+
+    const materialesResueltos = await resolveMaterialesForSave(slug);
+
+    const payload = {
+      name,
+      description: f.get('description') || '',
+      price_cents: price,
+      image: imageUrl || (imagesList[0] || ''),
+      images_json: JSON.stringify(imagesList),
+      stl_path: stlPath,
+      category: f.get('category') || 'General',
+      subcategory: f.get('subcategory') || '',
+      product_type: productType,
+      generator_url: generatorUrl,
+      tags: f.get('tags') || '',
+      keywords: f.get('keywords') || '',
+      size_model: f.get('size_model') || '',
+      layer_height: f.get('layer_height') || '',
+      material: f.get('material') || '',
+      license: f.get('license') || 'personal',
+      pdf_url: pdfUrl,
+      model_3d_url: model3dUrl,
+      file_size: fileSize,
+      patreon_exclusive: $('#patreonExclusive').checked ? 1 : 0,
+      materiales_json: JSON.stringify(materialesResueltos)
+    };
+
+    if (editId) {
+      await call('/api/admin/products/' + encodeURIComponent(editId), {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      status($('#formStatus'), '✓ Cambios guardados correctamente.', true);
+    } else {
+      await call('/api/admin/products', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      status($('#formStatus'), '✓ Producto creado correctamente.', true);
+    }
+
+    resetForm();
+    load();
+  } catch (err) {
+    status($('#formStatus'), err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = $('#editId').value ? 'Guardar cambios' : 'Crear producto';
+  }
+};
+
+$('#cancel').onclick = () => resetForm();
+
+// ---------- Tabs ----------
+$$('.tab').forEach(b => b.onclick = () => {
+  $$('.tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  $$('.tabpanel').forEach(x => x.classList.add('hidden'));
+  $('#' + b.dataset.tab).classList.remove('hidden');
+  if (b.dataset.tab === 'products') load();
+});
+
+// ---------- Delete ----------
+document.addEventListener('click', async e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    try {
+      await call('/api/admin/products/' + encodeURIComponent(del.dataset.del), { method: 'DELETE' });
+      load();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+});
+
+
+// ========== Multi-imagen + Ofertas + Cupones + Taxonomy ==========
+function renderImageThumbs(urls) {
+  const wrap = document.getElementById('imageThumbs');
+  if (!wrap) return;
+  const list = Array.isArray(urls) ? urls : [];
+  wrap.innerHTML = list.map((u, i) =>
+    '<div class="thumb" data-idx="'+i+'" style="width:96px;height:96px;overflow:hidden">'+
+    '<img src="'+esc(u)+'" alt="" style="width:96px;height:96px;object-fit:cover;display:block">'+
+    '<button type="button" title="Quitar" data-rm-img="'+i+'">×</button></div>'
+  ).join('');
+  const sel = document.getElementById('imageSelected');
+  const box = document.getElementById('imageBox');
+  if (sel) sel.textContent = list.length ? ('✓ ' + list.length + ' imagen(es)') : '';
+  if (box && list.length) box.classList.add('has-file');
+}
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-rm-img]');
+  if (!btn) return;
+  var imgs = [];
+  try { imgs = JSON.parse(document.getElementById('existingImagesJson').value || '[]'); } catch (err) {}
+  imgs.splice(Number(btn.getAttribute('data-rm-img')), 1);
+  document.getElementById('existingImagesJson').value = JSON.stringify(imgs);
+  document.getElementById('existingImage').value = imgs[0] || '';
+  renderImageThumbs(imgs);
+});
+(function(){
+  var input = document.getElementById('imageFile');
+  if (!input) return;
+  input.addEventListener('change', function() {
+    var n = input.files ? input.files.length : 0;
+    var sel = document.getElementById('imageSelected');
+    if (sel && n) sel.textContent = n + ' archivo(s) listo(s) para subir';
+    if (n) document.getElementById('imageBox').classList.add('has-file');
+  });
+})();
+
+var taxonomyItems = [];
+var productsCache = [];
+
+function localDT(iso) {
+  if (!iso) return '';
+  try {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso).slice(0, 16);
+    function pad(n){ return String(n).padStart(2,'0'); }
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  } catch (e) { return ''; }
+}
+function toIso(local) {
+  if (!local) return null;
+  try {
+    const d = new Date(local);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function loadTaxonomy() {
+  try {
+    var d = await call('/api/admin/taxonomy');
+    taxonomyItems = d.items || [];
+  } catch (e) {
+    try {
+      var r = await fetch(API + '/api/taxonomy');
+      var d2 = await r.json();
+      taxonomyItems = d2.items || [];
+    } catch (e2) { taxonomyItems = []; }
+  }
+  refreshTaxUI();
+}
+
+function refreshTaxUI() {
+  var cats = taxonomyItems.filter(function(x){ return x.kind === 'category'; });
+  var subs = taxonomyItems.filter(function(x){ return x.kind === 'subcategory'; });
+  var defaults = ['General','Toppers','Mascotas','Carteles','Decoración','Llaveros','Juguetes'];
+  var catNames = Array.from(new Set(defaults.concat(cats.map(function(c){ return c.name; }))));
+  var catList = document.getElementById('catList');
+  if (catList) catList.innerHTML = catNames.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  var subDefaults = ['Cumpleaños','Boda','Baby shower','Perros','Gatos','Otras mascotas','Nombres','Frases','Negocios','Cuadros','Floreros','Macetas','Lámparas','Iniciales'];
+  var subNames = Array.from(new Set(subDefaults.concat(subs.map(function(s){ return s.name; }))));
+  var subList = document.getElementById('subcatList');
+  if (subList) subList.innerHTML = subNames.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('');
+  var parentSel = document.getElementById('newSubParent');
+  if (parentSel) parentSel.innerHTML = catNames.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('');
+  var body = document.getElementById('taxBody');
+  if (body) {
+    body.innerHTML = taxonomyItems.map(function(it){
+      return '<tr><td>'+(it.kind==='subcategory'?'Subcategoría':'Categoría')+'</td><td>'+esc(it.name)+'</td><td>'+esc(it.parent||'—')+'</td>'+
+        '<td><button type="button" class="danger" data-del-tax="'+esc(it.id)+'">Eliminar</button></td></tr>';
+    }).join('') || '<tr><td colspan="4">Sin categorías propias aún.</td></tr>';
+  }
+  renderScopeChips('offer');
+  renderScopeChips('coupon');
+}
+
+document.getElementById('addCatBtn') && document.getElementById('addCatBtn').addEventListener('click', async function(){
+  var name = (document.getElementById('newCatName').value || '').trim();
+  if (!name) return status(document.getElementById('taxStatus'), 'Escribí un nombre de categoría.');
+  try {
+    await call('/api/admin/taxonomy', { method:'POST', body: JSON.stringify({ kind:'category', name:name }) });
+    document.getElementById('newCatName').value = '';
+    status(document.getElementById('taxStatus'), '✓ Categoría creada', true);
+    await loadTaxonomy();
+  } catch (e) { status(document.getElementById('taxStatus'), e.message); }
+});
+document.getElementById('addSubBtn') && document.getElementById('addSubBtn').addEventListener('click', async function(){
+  var name = (document.getElementById('newSubName').value || '').trim();
+  var parent = document.getElementById('newSubParent').value || '';
+  if (!name) return status(document.getElementById('taxStatus'), 'Escribí un nombre de subcategoría.');
+  try {
+    await call('/api/admin/taxonomy', { method:'POST', body: JSON.stringify({ kind:'subcategory', name:name, parent:parent }) });
+    document.getElementById('newSubName').value = '';
+    status(document.getElementById('taxStatus'), '✓ Subcategoría creada', true);
+    await loadTaxonomy();
+  } catch (e) { status(document.getElementById('taxStatus'), e.message); }
+});
+document.addEventListener('click', async function(e){
+  var b = e.target.closest('[data-del-tax]');
+  if (!b) return;
+  if (!confirm('¿Eliminar?')) return;
+  try {
+    await call('/api/admin/taxonomy/' + encodeURIComponent(b.getAttribute('data-del-tax')), { method:'DELETE' });
+    await loadTaxonomy();
+  } catch (err) { alert(err.message); }
+});
+
+function scopeOptions(type) {
+  if (type === 'categories') {
+    var defaults = ['General','Toppers','Mascotas','Carteles','Decoración','Llaveros','Juguetes'];
+    var extra = taxonomyItems.filter(function(x){ return x.kind==='category'; }).map(function(x){ return x.name; });
+    return Array.from(new Set(defaults.concat(extra)));
+  }
+  if (type === 'subcategories') {
+    var defaults = ['Cumpleaños','Boda','Baby shower','Perros','Gatos','Otras mascotas','Nombres','Frases','Negocios','Cuadros','Floreros','Macetas','Lámparas','Iniciales'];
+    var extra = taxonomyItems.filter(function(x){ return x.kind==='subcategory'; }).map(function(x){ return x.name; });
+    return Array.from(new Set(defaults.concat(extra)));
+  }
+  if (type === 'products') {
+    return (productsCache || []).map(function(p){ return { id: p.id, label: p.name || p.id }; });
+  }
+  return [];
+}
+
+
+function renderScopeChips(kind) {
+  var typeEl = document.getElementById(kind === 'offer' ? 'offerScopeType' : 'couponScopeType');
+  var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  var productBox = document.getElementById(kind === 'offer' ? 'offerProductPicker' : 'couponProductPicker');
+  if (!typeEl || !wrap) return;
+  var type = typeEl.value;
+  if (productBox) productBox.style.display = type === 'products' ? 'block' : 'none';
+  if (type === 'all') {
+    wrap.innerHTML = '<span class="note">Se aplica a <strong>todo</strong> el catálogo.</span>';
+    wrap.style.display = 'block';
+    return;
+  }
+  if (type === 'products') {
+    wrap.innerHTML = '';
+    wrap.style.display = 'none';
+    refreshSelectedTags(kind);
+    return;
+  }
+  wrap.style.display = 'flex';
+  var opts = scopeOptions(type);
+  var selected = new Set((wrap.dataset.selected || '').split('\u0001').filter(Boolean));
+  wrap.innerHTML = opts.map(function(o){
+    var val = typeof o === 'string' ? o : o.id;
+    var label = typeof o === 'string' ? o : o.label;
+    var on = selected.has(val) ? ' on' : '';
+    var ck = selected.has(val) ? ' checked' : '';
+    return '<label class="chip'+on+'"><input type="checkbox" value="'+esc(val)+'"'+ck+'>'+esc(label)+'</label>';
+  }).join('');
+  wrap.querySelectorAll('input').forEach(function(inp){
+    inp.onchange = function(){
+      var set = new Set();
+      wrap.querySelectorAll('input:checked').forEach(function(i){ set.add(i.value); });
+      wrap.dataset.selected = Array.from(set).join('\u0001');
+      wrap.querySelectorAll('.chip').forEach(function(ch){
+        var i = ch.querySelector('input');
+        ch.classList.toggle('on', !!(i && i.checked));
+      });
+    };
+  });
+}
+function getScopeSelection(kind) {
+  var typeEl = document.getElementById(kind === 'offer' ? 'offerScopeType' : 'couponScopeType');
+  var type = typeEl ? typeEl.value : '';
+  if (type === 'products') {
+    var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+    return (wrap && wrap.dataset.selected) ? wrap.dataset.selected.split('\u0001').filter(Boolean) : [];
+  }
+  var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  if (!wrap) return [];
+  return Array.from(wrap.querySelectorAll('input:checked')).map(function(i){ return i.value; });
+}
+function refreshSelectedTags(kind) {
+  var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  var tags = document.getElementById(kind === 'offer' ? 'offerSelectedTags' : 'couponSelectedTags');
+  if (!wrap || !tags) return;
+  var ids = (wrap.dataset.selected || '').split('\u0001').filter(Boolean);
+  var byId = {};
+  (productsCache || []).forEach(function(p){ byId[p.id] = p; });
+  tags.innerHTML = ids.map(function(id){
+    var p = byId[id];
+    var name = p ? (p.name || id) : id;
+    return '<span class="tag">'+esc(name)+' <button type="button" data-rm-pick="'+esc(id)+'" data-kind="'+kind+'" title="Quitar">×</button></span>';
+  }).join('') || '<span class="note">Ningún diseño seleccionado todavía.</span>';
+}
+var pickerKind = 'offer';
+var pickerTemp = new Set();
+function openProductPicker(kind) {
+  pickerKind = kind;
+  var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  pickerTemp = new Set((wrap && wrap.dataset.selected) ? wrap.dataset.selected.split('\u0001').filter(Boolean) : []);
+  var modal = document.getElementById('productPickerModal');
+  var search = document.getElementById('pickerSearch');
+  if (search) search.value = '';
+  renderPickerList('');
+  if (modal) { modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
+  if (search) setTimeout(function(){ search.focus(); }, 50);
+}
+function closeProductPicker() {
+  var modal = document.getElementById('productPickerModal');
+  if (modal) { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+}
+function renderPickerList(q) {
+  var list = document.getElementById('pickerList');
+  var count = document.getElementById('pickerCount');
+  if (!list) return;
+  var query = String(q || '').toLowerCase().trim();
+  var items = (productsCache || []).filter(function(p){
+    if (!query) return true;
+    var hay = [p.name, p.category, p.subcategory, p.id].join(' ').toLowerCase();
+    return hay.indexOf(query) !== -1;
+  });
+  list.innerHTML = items.map(function(p){
+    var on = pickerTemp.has(p.id) ? ' on' : '';
+    var img = p.image ? '<img src="'+esc(p.image)+'" alt="">' : '<img src="" alt="" style="background:#e5e7eb">';
+    return '<div class="picker-item'+on+'" data-pid="'+esc(p.id)+'">'+img+
+      '<div class="meta"><strong>'+esc(p.name||p.id)+'</strong><span>'+esc(p.category||'')+(p.subcategory?' · '+esc(p.subcategory):'')+'</span></div></div>';
+  }).join('') || '<p class="note" style="padding:16px">No hay diseños que coincidan.</p>';
+  list.querySelectorAll('.picker-item').forEach(function(row){
+    row.onclick = function(){
+      var id = row.getAttribute('data-pid');
+      if (pickerTemp.has(id)) pickerTemp.delete(id); else pickerTemp.add(id);
+      row.classList.toggle('on', pickerTemp.has(id));
+      if (count) count.textContent = pickerTemp.size + ' seleccionado' + (pickerTemp.size===1?'':'s');
+    };
+  });
+  if (count) count.textContent = pickerTemp.size + ' seleccionado' + (pickerTemp.size===1?'':'s');
+}
+function confirmProductPicker() {
+  var wrap = document.getElementById(pickerKind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  if (wrap) wrap.dataset.selected = Array.from(pickerTemp).join('\u0001');
+  refreshSelectedTags(pickerKind);
+  closeProductPicker();
+}
+
+
+document.getElementById('offerScopeType') && document.getElementById('offerScopeType').addEventListener('change', function(){
+  document.getElementById('offerScopeChips').dataset.selected = '';
+  renderScopeChips('offer');
+});
+document.getElementById('couponScopeType') && document.getElementById('couponScopeType').addEventListener('change', function(){
+  document.getElementById('couponScopeChips').dataset.selected = '';
+  renderScopeChips('coupon');
+});
+
+async function loadOffers() {
+  try {
+    var d = await call('/api/admin/offers');
+    var body = document.getElementById('offersBody');
+    if (!body) return;
+    body.innerHTML = (d.offers || []).map(function(o){
+      var scope = []; try { scope = JSON.parse(o.scope_json || '[]'); } catch (e) {}
+      return '<tr><td>'+esc(o.name)+'</td><td>'+Number(o.percent)+'%</td><td>'+esc(o.scope_type)+': '+esc((scope||[]).join(', ')||'—')+
+        '</td><td style="font-size:12px">'+esc(o.starts_at||'—')+'<br>'+esc(o.ends_at||'—')+'</td><td>'+(o.active?'Activa':'Off')+
+        '</td><td><button type="button" class="secondary" data-edit-offer=\''+esc(JSON.stringify(o))+'\'>Editar</button> '+
+        '<button type="button" class="danger" data-del-offer="'+esc(o.id)+'">Eliminar</button></td></tr>';
+    }).join('') || '<tr><td colspan="6">Sin ofertas aún.</td></tr>';
+  } catch (e) {
+    var body = document.getElementById('offersBody');
+    if (body) body.innerHTML = '<tr><td colspan="6">'+esc(e.message)+'</td></tr>';
+  }
+}
+function couponStatusLabel(c) {
+  var now = new Date();
+  var isActive = !(c.active === 0 || c.active === false || c.active === '0');
+  var starts = c.starts_at ? new Date(String(c.starts_at).replace(' ', 'T')) : null;
+  var ends = c.ends_at ? new Date(String(c.ends_at).replace(' ', 'T')) : null;
+  if (!isActive) return { text: 'Inactivo', color: '#6b7280', bg: '#f3f4f6' };
+  if (starts && !isNaN(starts.getTime()) && starts > now) return { text: 'Futuro', color: '#1d4ed8', bg: '#dbeafe' };
+  if (ends && !isNaN(ends.getTime()) && ends < now) return { text: 'Vencido', color: '#b45309', bg: '#fef3c7' };
+  return { text: 'Vigente', color: '#047857', bg: '#d1fae5' };
+}
+
+async function loadCouponsAdmin() {
+  var body = document.getElementById('couponsBody');
+  if (!body) return;
+  body.innerHTML = '<tr><td colspan="8" style="color:#6b7280">Cargando cupones…</td></tr>';
+
+  try {
+    var d = await call(COUPON_LIST);
+    if (d && Array.isArray(d.items) && !Array.isArray(d.coupons)) {
+      d = { coupons: d.items };
+    }
+    if (!d || !Array.isArray(d.coupons)) {
+      throw new Error('La API no devolvió la lista de cupones.');
+    }
+
+    var list = d.coupons || [];
+    // Más recientes primero si hay created_at
+    list = list.slice().sort(function(a, b) {
+      return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+    });
+
+    body.innerHTML = list.map(function(c) {
+      var maxU = c.max_uses_total != null ? Number(c.max_uses_total) : Number(c.max_uses || 0);
+      var maxLabel = maxU === 0 ? '∞' : String(maxU);
+      var used = Number(c.used_count || 0);
+      var scopeLabels = {
+        all: 'Todo el catálogo',
+        categories: 'Categorías',
+        subcategories: 'Subcategorías',
+        products: 'Diseños'
+      };
+      var scopeLabel = scopeLabels[c.scope_type || 'all'] || (c.scope_type || 'all');
+      var st = couponStatusLabel(c);
+      var safeJson = esc(JSON.stringify(c)).replace(/'/g, '&#39;');
+
+      return '<tr>' +
+        '<td><strong>' + esc(c.code) + '</strong></td>' +
+        '<td>' + Number(c.percent || 0) + '%</td>' +
+        '<td><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:' + st.color + ';background:' + st.bg + '">' + st.text + '</span></td>' +
+        '<td>' + used + '/' + maxLabel + ' · ' + Number(c.max_uses_per_person || 0) + '/persona</td>' +
+        '<td>$' + (Number(c.min_cents || 0) / 100).toFixed(2) + '</td>' +
+        '<td>' + esc(scopeLabel) + '</td>' +
+        '<td style="font-size:12px">' + esc(c.starts_at || 'Sin inicio') + '<br>' + esc(c.ends_at || 'Sin vencimiento') + '</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button type="button" class="secondary" data-edit-coupon=\'' + safeJson + '\'>Editar</button> ' +
+          '<button type="button" class="danger" data-del-coupon="' + esc(c.id) + '">Eliminar</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('') || '<tr><td colspan="8" style="color:#6b7280;padding:18px">Todavía no hay cupones. Creá uno con el formulario de arriba.</td></tr>';
+
+  } catch (e) {
+    var msg = (e && e.message) ? String(e.message) : 'Error desconocido';
+    body.innerHTML =
+      '<tr><td colspan="8">' +
+      '<div style="padding:14px 4px;color:#b91c1c">' +
+      'No se pudieron cargar los cupones.<br><small style="color:#6b7280">' + esc(msg.replace(/\n/g,' | ')) + '</small><br>' +
+      '<button type="button" class="secondary" id="retryCouponsBtn" style="margin-top:8px">Reintentar</button> ' +
+      '<button type="button" class="secondary" id="diagCouponsBtn" style="margin-top:8px">Diagnosticar</button>' +
+      '</div></td></tr>';
+
+    var btn = document.getElementById('retryCouponsBtn');
+    if (btn) btn.onclick = function(){ loadCouponsAdmin(); };
+    var dbtn = document.getElementById('diagCouponsBtn');
+    if (dbtn) dbtn.onclick = async function(){
+      var lines = ['API=' + API, 'admin=' + (window.VK_ADMIN_VERSION||'?')];
+      for (const path of ['/api/health', '/api/admin/products', '/api/admin/catalog?section=codes', '/api/admin/offers']) {
+        try {
+          const r = await fetch(API + path, { headers: key ? { Authorization: 'Bearer ' + key } : {}, mode:'cors', cache:'no-store' });
+          const txt = await r.text();
+          lines.push(path + ' → HTTP ' + r.status + ' ' + txt.slice(0,80));
+        } catch (e) {
+          lines.push(path + ' → FETCH FAIL: ' + (e && e.message));
+        }
+      }
+      alert(lines.join('\n'));
+    };
+  }
+}
+
+document.getElementById('offerForm') && document.getElementById('offerForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var id = document.getElementById('offerEditId').value;
+  var payload = {
+    name: document.getElementById('offerName').value.trim(),
+    percent: Number(document.getElementById('offerPercent').value),
+    scope_type: document.getElementById('offerScopeType').value,
+    scope: getScopeSelection('offer'),
+    active: document.getElementById('offerActive').checked,
+    starts_at: toIso(document.getElementById('offerStarts').value),
+    ends_at: toIso(document.getElementById('offerEnds').value)
+  };
+  try {
+    if (id) await call('/api/admin/offers/' + encodeURIComponent(id), { method:'PUT', body: JSON.stringify(payload) });
+    else await call('/api/admin/offers', { method:'POST', body: JSON.stringify(payload) });
+    status(document.getElementById('offerStatus'), '✓ Oferta guardada', true);
+    document.getElementById('offerReset').click();
+    loadOffers();
+  } catch (err) { status(document.getElementById('offerStatus'), err.message); }
+});
+document.getElementById('offerReset') && document.getElementById('offerReset').addEventListener('click', function(){
+  document.getElementById('offerEditId').value = '';
+  document.getElementById('offerName').value = '';
+  document.getElementById('offerPercent').value = '40';
+  document.getElementById('offerScopeType').value = 'categories';
+  document.getElementById('offerStarts').value = '';
+  document.getElementById('offerEnds').value = '';
+  document.getElementById('offerActive').checked = true;
+  document.getElementById('offerScopeChips').dataset.selected = '';
+  renderScopeChips('offer');
+});
+document.getElementById('couponForm') && document.getElementById('couponForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var id = document.getElementById('couponEditId').value;
+  var code = document.getElementById('couponCode').value.trim().toUpperCase();
+  var percent = Number(document.getElementById('couponPercent').value);
+  if (!code) {
+    status(document.getElementById('couponStatus'), 'Escribí un código de cupón.');
+    return;
+  }
+  if (!(percent >= 0 && percent <= 100)) {
+    status(document.getElementById('couponStatus'), 'El % debe estar entre 0 y 100.');
+    return;
+  }
+  var scopeType = document.getElementById('couponScopeType').value || 'all';
+  var scope = getScopeSelection('coupon');
+  if (scopeType !== 'all' && (!scope || !scope.length)) {
+    status(document.getElementById('couponStatus'), 'Elegí al menos un ítem de alcance, o poné “Todo el catálogo”.');
+    return;
+  }
+  // Payload compatible con esquema nuevo (panel) y viejo (D1 actual):
+  // viejo: max_uses, amount_cents | nuevo: max_uses_total, scope_type, scope_json, etc.
+  var maxTotal = Number(document.getElementById('couponMaxTotal').value) || 0;
+  var maxPerson = Number(document.getElementById('couponMaxPerson').value) || 1;
+  var minCents = Math.round((Number(document.getElementById('couponMinUsd').value) || 0) * 100);
+  var payload = {
+    code: code,
+    percent: percent,
+    amount_cents: null,
+    max_uses: maxTotal,
+    max_uses_total: maxTotal,
+    max_uses_per_person: maxPerson,
+    min_cents: minCents,
+    scope_type: scopeType,
+    scope: scope || [],
+    scope_json: JSON.stringify(scope || []),
+    active: !!document.getElementById('couponActive').checked,
+    starts_at: toIso(document.getElementById('couponStarts').value),
+    ends_at: toIso(document.getElementById('couponEnds').value)
+  };
+  status(document.getElementById('couponStatus'), 'Guardando cupón…', true);
+  try {
+    var method = id ? 'PUT' : 'POST';
+    var path = id ? couponItemPath(id) : COUPON_LIST;
+    await call(path, { method: method, body: JSON.stringify(payload) });
+    status(document.getElementById('couponStatus'), '✓ Cupón guardado. Ya se puede usar en las publicaciones.', true);
+    document.getElementById('couponReset').click();
+    loadCouponsAdmin();
+  } catch (err) {
+    var m = (err && err.message) ? String(err.message) : String(err);
+    status(document.getElementById('couponStatus'), m.split('\n')[0]);
+  }
+});
+document.getElementById('couponReset') && document.getElementById('couponReset').addEventListener('click', function(){
+  document.getElementById('couponEditId').value = '';
+  document.getElementById('couponCode').value = '';
+  document.getElementById('couponPercent').value = '20';
+  document.getElementById('couponMaxTotal').value = '0';
+  document.getElementById('couponMaxPerson').value = '1';
+  document.getElementById('couponMinUsd').value = '0';
+  document.getElementById('couponScopeType').value = 'all';
+  document.getElementById('couponStarts').value = '';
+  document.getElementById('couponEnds').value = '';
+  document.getElementById('couponActive').checked = true;
+  document.getElementById('couponScopeChips').dataset.selected = '';
+  renderScopeChips('coupon');
+});
+
+document.addEventListener('click', async function(e){
+  var delO = e.target.closest('[data-del-offer]');
+  if (delO) {
+    if (!confirm('¿Eliminar oferta?')) return;
+    try { await call('/api/admin/offers/' + encodeURIComponent(delO.getAttribute('data-del-offer')), { method:'DELETE' }); loadOffers(); }
+    catch (err) { alert(err.message); }
+  }
+  var delC = e.target.closest('[data-del-coupon]');
+  if (delC) {
+    if (!confirm('¿Eliminar este cupón? Esta acción no se puede deshacer.')) return;
+    var cid = delC.getAttribute('data-del-coupon');
+    try {
+      await call(couponItemPath(cid), { method: 'DELETE' });
+      loadCouponsAdmin();
+    } catch (err) {
+      alert((err && err.message) ? err.message : 'No se pudo eliminar el cupón');
+    }
+  }
+  var edO = e.target.closest('[data-edit-offer]');
+  if (edO) {
+    try {
+      var o = JSON.parse(edO.getAttribute('data-edit-offer'));
+      document.getElementById('offerEditId').value = o.id;
+      document.getElementById('offerName').value = o.name || '';
+      document.getElementById('offerPercent').value = o.percent || 0;
+      document.getElementById('offerScopeType').value = o.scope_type || 'categories';
+      document.getElementById('offerStarts').value = localDT(o.starts_at);
+      document.getElementById('offerEnds').value = localDT(o.ends_at);
+      document.getElementById('offerActive').checked = !!Number(o.active);
+      var scope = []; try { scope = JSON.parse(o.scope_json || '[]'); } catch (err) {}
+      document.getElementById('offerScopeChips').dataset.selected = (scope || []).join('\u0001');
+      renderScopeChips('offer');
+      document.querySelector('[data-tab="offers"]').click();
+    } catch (err) {}
+  }
+  var edC = e.target.closest('[data-edit-coupon]');
+  if (edC) {
+    try {
+      var c = JSON.parse(edC.getAttribute('data-edit-coupon'));
+      document.getElementById('couponEditId').value = c.id;
+      document.getElementById('couponCode').value = c.code || '';
+      document.getElementById('couponPercent').value = c.percent || 0;
+      document.getElementById('couponMaxTotal').value = c.max_uses_total || 0;
+      document.getElementById('couponMaxPerson').value = c.max_uses_per_person || 1;
+      document.getElementById('couponMinUsd').value = ((Number(c.min_cents)||0)/100).toFixed(2);
+      document.getElementById('couponScopeType').value = c.scope_type || 'all';
+      document.getElementById('couponStarts').value = localDT(c.starts_at);
+      document.getElementById('couponEnds').value = localDT(c.ends_at);
+      document.getElementById('couponActive').checked = !!Number(c.active);
+      var scope = []; try { scope = JSON.parse(c.scope_json || '[]'); } catch (err) {}
+      document.getElementById('couponScopeChips').dataset.selected = (scope || []).join('\u0001');
+      renderScopeChips('coupon');
+      document.querySelector('[data-tab="coupons"]').click();
+    } catch (err) {}
+  }
+});
+
+document.querySelectorAll('.tab').forEach(function(b){
+  b.addEventListener('click', function(){
+    if (b.dataset.tab === 'offers') loadOffers();
+    if (b.dataset.tab === 'coupons') loadCouponsAdmin();
+    if (b.dataset.tab === 'taxonomy') loadTaxonomy();
+  });
+});
+document.getElementById('refreshCouponsBtn') && document.getElementById('refreshCouponsBtn').addEventListener('click', function(){
+  loadCouponsAdmin();
+});
+
+(function hookLoad(){
+  if (typeof load !== 'function') return;
+  var orig = load;
+  window.load = async function(){
+    await orig();
+    try {
+      var d = await call('/api/admin/products');
+      productsCache = d.products || [];
+    } catch (e) {}
+    await loadTaxonomy();
+  };
+})();
+
+
+document.getElementById('offerOpenPicker') && document.getElementById('offerOpenPicker').addEventListener('click', function(){ openProductPicker('offer'); });
+document.getElementById('couponOpenPicker') && document.getElementById('couponOpenPicker').addEventListener('click', function(){ openProductPicker('coupon'); });
+document.getElementById('pickerClose') && document.getElementById('pickerClose').addEventListener('click', closeProductPicker);
+document.getElementById('pickerCancel') && document.getElementById('pickerCancel').addEventListener('click', closeProductPicker);
+document.getElementById('pickerOk') && document.getElementById('pickerOk').addEventListener('click', confirmProductPicker);
+document.getElementById('pickerSearch') && document.getElementById('pickerSearch').addEventListener('input', function(e){ renderPickerList(e.target.value); });
+document.getElementById('productPickerModal') && document.getElementById('productPickerModal').addEventListener('click', function(e){ if (e.target.id === 'productPickerModal') closeProductPicker(); });
+document.addEventListener('click', function(e){
+  var rm = e.target.closest('[data-rm-pick]');
+  if (!rm) return;
+  var kind = rm.getAttribute('data-kind');
+  var id = rm.getAttribute('data-rm-pick');
+  var wrap = document.getElementById(kind === 'offer' ? 'offerScopeChips' : 'couponScopeChips');
+  if (!wrap) return;
+  var set = new Set((wrap.dataset.selected || '').split('\u0001').filter(Boolean));
+  set.delete(id);
+  wrap.dataset.selected = Array.from(set).join('\u0001');
+  refreshSelectedTags(kind);
+});
+
+</script>
+</body>
+</html>
