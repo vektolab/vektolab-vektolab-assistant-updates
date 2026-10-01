@@ -299,8 +299,9 @@ function createPanelWindow(mode='home'){
   const size=mode==='catalog'?CATALOG_SIZE:mode==='generator'?GENERATOR_SIZE:PANEL_SIZE;
   panelWindow=new BrowserWindow({
     width:size[0],height:size[1],frame:false,transparent:true,resizable:false,movable:false,
-    parent: assistantWindow, modal:false,
     alwaysOnTop:true,skipTaskbar:true,show:false,hasShadow:false,backgroundColor:'#00000000',
+    acceptFirstMouse:true,
+    focusable:true,
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   panelWindow.setAlwaysOnTop(true,'floating');
@@ -345,6 +346,8 @@ function createAssistant() {
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   assistantWindow.setAlwaysOnTop(true,'floating');
+  assistantWindow.setIgnoreMouseEvents(false);
+  assistantWindow.setFocusable(true);
   assistantWindow.loadFile(path.join(__dirname,'avatar.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{positionAvatar();assistantWindow.showInactive();});
   assistantWindow.on('closed',()=>assistantWindow=null);
@@ -377,7 +380,9 @@ function togglePanel(){
     sendGenerators();
     sendDesigns();
     if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
+    positionPanelWindow();
     w.show();
+    w.moveTop();
     w.focus();
   }).catch(err=>{
     console.error('[Vektolab] No se pudo abrir el panel:',err);
