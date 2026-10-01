@@ -1,0 +1,50 @@
+name: Actualizar manifest de contenido
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "content/**"
+      - "scripts/generate-content-manifest.js"
+
+permissions:
+  contents: write
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generar manifest
+        run: node scripts/generate-content-manifest.js
+
+      - name: Comprobar cambios
+        id: cambios
+        shell: bash
+        run: |
+          if git diff --quiet -- content/manifest.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar manifest actualizado
+        if: steps.cambios.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add content/manifest.json
+          git commit -m "Actualizar manifest de contenido"
+          git push
