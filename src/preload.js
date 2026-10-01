@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('vektolab', {
+  togglePanel: () => ipcRenderer.send('toggle-panel'),
   openGenerator: slug => ipcRenderer.send('open-generator', slug),
   openDesign: slug => ipcRenderer.send('open-design', slug),
   openCatalog: () => ipcRenderer.send('open-catalog'),

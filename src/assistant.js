@@ -1,16 +1,15 @@
-const app=document.getElementById('app'), avatar=document.getElementById('avatar'), search=document.getElementById('search'), designs=document.getElementById('designs');
+const app=document.getElementById('app'), search=document.getElementById('search'), designs=document.getElementById('designs');
 const checkUpdatesButton=document.getElementById('checkUpdates'), versionLabel=document.getElementById('versionLabel');
 const toastStack=document.getElementById('toastStack'), tabGenerators=document.getElementById('tabGenerators'), tabDesigns=document.getElementById('tabDesigns');
 let items=[]; let staticDesigns=[]; let activeTab='generators'; let catalogMode=false; let toastTimers=[];
 
 function openPanel(){
  app.classList.add('open');
- window.vektolab.setPanelOpen(true);
  setTimeout(()=>search.focus(),80);
 }
 function closePanel(){
  app.classList.remove('open');
- window.vektolab.setPanelOpen(false);
+ window.vektolab.closePanel();
 }
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function currentItems(){return activeTab==='designs'?staticDesigns:items}
@@ -64,108 +63,6 @@ function showContentUpdate(state){
  else if(state?.status==='error') showToast('⚠ No se pudieron cargar los generadores.',{duration:5000});
 }
 
-// --- Movimiento físico de Vekto -------------------------------------------------
-let avatarDragging=false;
-let dragPointerId=null;
-let lastPointer=null;
-let wasPanelOpenAtDragStart=false;
-let lastPointerTime=0;
-let dragMoved=false;
-let lastVelocityX=0;
-let lastVelocityY=0;
-
-function clampVelocity(value){
- return Math.max(-2200, Math.min(2200, value));
-}
-
-function edgeBounce(direction){
- avatar.classList.remove('edge-hit');
- // Force a new animation even when the user is holding the mouse.
- void avatar.offsetWidth;
- avatar.classList.add('edge-hit');
- setTimeout(()=>avatar.classList.remove('edge-hit'),260);
- if(direction==='left') avatar.style.setProperty('--tilt','-10deg');
- if(direction==='right') avatar.style.setProperty('--tilt','10deg');
-}
-
-avatar.addEventListener('pointerdown', e=>{
- if(e.button!==0) return;
- e.preventDefault();
- e.stopPropagation();
-
- wasPanelOpenAtDragStart=app.classList.contains('open');
- if(wasPanelOpenAtDragStart) closePanel();
-
- avatarDragging=true;
- dragPointerId=e.pointerId;
- dragMoved=false;
- lastVelocityX=0;
- lastVelocityY=0;
- lastPointer={x:e.screenX,y:e.screenY};
- lastPointerTime=performance.now();
- avatar.classList.add('dragging');
- avatar.setPointerCapture?.(e.pointerId);
- window.vektolab.startAvatarDrag(e.screenX,e.screenY);
-});
-
-window.addEventListener('pointermove', e=>{
- if(!avatarDragging || e.pointerId!==dragPointerId) return;
- e.preventDefault();
-
- const now=performance.now();
- const dt=Math.max(1,now-lastPointerTime);
- const dx=e.screenX-lastPointer.x;
- const dy=e.screenY-lastPointer.y;
-
- if(Math.abs(dx)+Math.abs(dy)>2) dragMoved=true;
-
- const vx=clampVelocity(dx/(dt/1000));
- const vy=clampVelocity(dy/(dt/1000));
- lastVelocityX=vx;
- lastVelocityY=vy;
-
- const tilt=Math.max(-16,Math.min(16,vx*0.012+dy*0.01));
- avatar.style.setProperty('--tilt',`${tilt.toFixed(2)}deg`);
-
- window.vektolab.moveAvatarDrag(e.screenX,e.screenY,vx,vy);
-
- lastPointer={x:e.screenX,y:e.screenY};
- lastPointerTime=now;
-},{passive:false});
-
-function finishAvatarDrag(e){
- if(!avatarDragging || e.pointerId!==dragPointerId) return;
-
- const now=performance.now();
- const dt=Math.max(1,now-lastPointerTime);
- const releaseVx=clampVelocity((e.screenX-lastPointer.x)/(dt/1000));
- const releaseVy=clampVelocity((e.screenY-lastPointer.y)/(dt/1000));
-
- const vx=Math.abs(releaseVx)>120 ? releaseVx : lastVelocityX;
- const vy=Math.abs(releaseVy)>120 ? releaseVy : lastVelocityY;
-
- avatarDragging=false;
- dragPointerId=null;
- avatar.classList.remove('dragging');
- avatar.classList.remove('edge-hit');
- avatar.style.removeProperty('--tilt');
-
- window.vektolab.endAvatarDrag(vx,vy);
-
- if(!dragMoved){
-   wasPanelOpenAtDragStart ? closePanel() : openPanel();
- }
-}
-window.addEventListener('pointerup',finishAvatarDrag);
-window.addEventListener('pointercancel',finishAvatarDrag);
-
-window.vektolab.onPanelPlacement(placement=>{
- panel.classList.toggle('below', placement==='below');
-});
-window.vektolab.onAvatarEdgeBounce(direction=>{
- edgeBounce(direction);
-});
-
 
 window.vektolab.onGenerators(list=>{items=Array.isArray(list)?list:[]; render(search.value);});
 window.vektolab.onDesigns(list=>{staticDesigns=Array.isArray(list)?list:[]; if(activeTab==='designs') render(search.value);});
@@ -173,7 +70,6 @@ window.vektolab.onCatalogMode(()=>{catalogMode=true; app.classList.add('catalog-
 window.vektolab.onAssistantBlur(()=>{if(catalogMode){catalogMode=false; app.classList.remove('catalog-mode','open'); window.vektolab.closeCatalog();}else closePanel();});
 if(checkUpdatesButton){checkUpdatesButton.addEventListener('click',()=>{checkUpdatesButton.disabled=true;window.vektolab.checkUpdates();window.vektolab.syncContent();setTimeout(()=>checkUpdatesButton.disabled=false,2500);});}
 window.vektolab.onAppVersion(v=>{if(versionLabel) versionLabel.textContent='v'+v;});
-avatar.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();});
 document.getElementById('close').addEventListener('click',closePanel);
 document.getElementById('explore').addEventListener('click',()=>{window.vektolab.openCatalog();});
 tabGenerators.addEventListener('click',()=>selectTab('generators')); tabDesigns.addEventListener('click',()=>selectTab('designs'));
