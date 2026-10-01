@@ -167,11 +167,32 @@ function startAvatarPhysics(vx,vy){
   stopAvatarPhysics(false);
   if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
   const speed=Math.hypot(vx,vy);
-  if(speed<180){saveAvatarCenter(avatarCenter());return;}
+  const [w,h]=AVATAR_SIZE;
+  // La física trabaja siempre sobre el área de trabajo que contiene a Vekto
+  // cuando comienza el lanzamiento. No volvemos a cambiar de monitor/área
+  // durante el rebote aunque la ventana quede momentáneamente cerca de un borde.
+  const startPos=assistantWindow.getPosition();
+  const startCenter={x:startPos[0]+w/2,y:startPos[1]+h/2};
+  const area=screen.getDisplayNearestPoint({x:Math.round(startCenter.x),y:Math.round(startCenter.y)}).workArea;
+  const minX=area.x;
+  const maxX=area.x+area.width-w;
+  const minY=area.y;
+  const maxY=area.y+area.height-h;
+  const clampX=Math.max(minX,Math.min(Math.round(startPos[0]),maxX));
+  const clampY=Math.max(minY,Math.min(Math.round(startPos[1]),maxY));
+
+  if(clampX!==startPos[0]||clampY!==startPos[1]){
+    assistantWindow.setPosition(clampX,clampY,false);
+  }
+
+  if(speed<180){
+    saveAvatarCenter({x:clampX+w/2,y:clampY+h/2});
+    return;
+  }
 
   physicsBounceCount=0;
   let last=Date.now();
-  let pos=assistantWindow.getPosition();
+  let pos=[clampX,clampY];
   let velocityX=Math.max(-2200,Math.min(2200,vx));
   let velocityY=Math.max(-2200,Math.min(2200,vy));
   const gravity=520;
@@ -189,22 +210,20 @@ function startAvatarPhysics(vx,vy){
     pos[0]+=velocityX*dt;
     pos[1]+=velocityY*dt;
 
-    const [w,h]=AVATAR_SIZE;
-    const area=screen.getDisplayNearestPoint({x:Math.round(pos[0]+w/2),y:Math.round(pos[1]+h/2)}).workArea;
     let bounced=false;
     let direction=null;
 
-    // Los límites físicos son siempre el área visible de Windows,
-    // excluyendo la barra de tareas. El avatar nunca puede quedar fuera.
-    if(pos[0]<area.x){
-      pos[0]=area.x; velocityX=Math.abs(velocityX)*0.72; bounced=true; direction='left';
-    }else if(pos[0]>area.x+area.width-w){
-      pos[0]=area.x+area.width-w; velocityX=-Math.abs(velocityX)*0.72; bounced=true; direction='right';
+    // Estos límites quedan fijados al comenzar el lanzamiento.
+    // Abrir/cerrar el menú antes del lanzamiento no puede alterar la física.
+    if(pos[0]<minX){
+      pos[0]=minX; velocityX=Math.abs(velocityX)*0.72; bounced=true; direction='left';
+    }else if(pos[0]>maxX){
+      pos[0]=maxX; velocityX=-Math.abs(velocityX)*0.72; bounced=true; direction='right';
     }
-    if(pos[1]<area.y){
-      pos[1]=area.y; velocityY=Math.abs(velocityY)*0.72; bounced=true; direction=direction||'top';
-    }else if(pos[1]>area.y+area.height-h){
-      pos[1]=area.y+area.height-h; velocityY=-Math.abs(velocityY)*0.72; bounced=true; direction=direction||'bottom';
+    if(pos[1]<minY){
+      pos[1]=minY; velocityY=Math.abs(velocityY)*0.72; bounced=true; direction=direction||'top';
+    }else if(pos[1]>maxY){
+      pos[1]=maxY; velocityY=-Math.abs(velocityY)*0.72; bounced=true; direction=direction||'bottom';
     }
 
     if(bounced){
@@ -214,7 +233,9 @@ function startAvatarPhysics(vx,vy){
     assistantWindow.setPosition(Math.round(pos[0]),Math.round(pos[1]),false);
 
     if(physicsBounceCount>=MAX_BOUNCES || Math.hypot(velocityX,velocityY)<75){
-      stopAvatarPhysics(true);
+      // Guardamos exactamente la posición física, no una posición derivada del menú.
+      saveAvatarCenter({x:pos[0]+w/2,y:pos[1]+h/2});
+      stopAvatarPhysics(false);
     }
   },16);
 }
