@@ -1,4 +1,4 @@
-# Vekto v0.6.7
+# Vekto v0.6.8
 
 - Vekto ahora puede moverse libremente por el escritorio arrastrando su avatar.
 - La posición se guarda y se conserva al volver a abrir Vekto.

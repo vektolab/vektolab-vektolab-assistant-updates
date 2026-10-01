@@ -1,4 +1,4 @@
-# Vekto v0.6.7
+# Vekto v0.6.8
 
 Correcciones de movimiento, posición y apertura del panel:
 

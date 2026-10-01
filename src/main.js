@@ -303,7 +303,15 @@ function createPanelWindow(mode='home'){
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   panelWindow.setAlwaysOnTop(true,'floating');
-  panelWindow.on('blur',()=>{ if(panelMode==='home'||panelMode==='catalog') closePanelWindow(); });
+  panelWindow.on('blur',()=> {
+    if (!(panelMode==='home'||panelMode==='catalog')) return;
+    setTimeout(() => {
+      if (!panelWindow || panelWindow.isDestroyed()) return;
+      const focused = BrowserWindow.getFocusedWindow();
+      if (focused === assistantWindow) return;
+      if (focused !== panelWindow) closePanelWindow();
+    }, 30);
+  });
   panelWindow.on('closed',()=>{panelWindow=null;panelOpen=false;panelMode='home';});
   positionPanelWindow();
   return panelWindow;
@@ -316,6 +324,8 @@ function createAssistant() {
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   assistantWindow.setAlwaysOnTop(true,'floating');
+  // El avatar no roba el foco al panel: así el panel no se cierra al tocar Vekto.
+  if (process.platform === 'win32') assistantWindow.setFocusable(false);
   assistantWindow.loadFile(path.join(__dirname,'avatar.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{positionAvatar();assistantWindow.showInactive();});
   assistantWindow.on('closed',()=>assistantWindow=null);
@@ -326,7 +336,9 @@ function positionAvatar(){
   assistantWindow.setPosition(Math.round(c.x-45),Math.round(c.y-45),false);
 }
 function togglePanel(){
+  if(!assistantWindow || assistantWindow.isDestroyed()) return;
   if(panelWindow&&!panelWindow.isDestroyed()){closePanelWindow();return;}
+  assistantWindow.showInactive();
   const w=createPanelWindow('home');
   w.loadFile(path.join(__dirname,'assistant.html'));
   w.webContents.once('did-finish-load',()=>{
