@@ -102,7 +102,7 @@ function finishAvatar(e){
   dragging=false;pointerId=null;avatar.classList.remove('dragging');
   try{avatar.releasePointerCapture?.(e.pointerId)}catch(_){}
   window.vektolab.endAvatarDrag();
-  if(click) openPanel();
+  if(click) window.vektolab.togglePanel();
 }
 window.addEventListener('pointerup',finishAvatar);
 window.addEventListener('pointercancel',finishAvatar);
@@ -110,3 +110,5 @@ window.addEventListener('pointercancel',finishAvatar);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
 window.vektolab.onUpdateState(showUpdate); window.vektolab.onContentState(showContentUpdate);
 window.vektolab.getUpdateState(); window.vektolab.getContentState(); window.vektolab.getGenerators(); window.vektolab.getDesigns(); render();
+
+window.vektolab.onAvatarEdgeBounce?.(()=>{ avatar.classList.remove('edge-hit'); void avatar.offsetWidth; avatar.classList.add('edge-hit'); setTimeout(()=>avatar.classList.remove('edge-hit'),260); });

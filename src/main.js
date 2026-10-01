@@ -17,6 +17,7 @@ let contentCheckRunning = false;
 let panelOpen = false;
 let panelMode = 'home';
 let dragState = null;
+let physicsTimer = null;
 let currentGenerator = null;
 
 const AVATAR_SIZE = [90,90];
@@ -162,16 +163,22 @@ function setPanelOpen(open){
     assistantWindow.show();assistantWindow.focus();
   }else{
     resizeForState(false);
+    assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
   }
 }
+function stopAvatarPhysics(){
+  if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
+}
+
 function beginAvatarDrag(x,y){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
+  stopAvatarPhysics();
   if(panelOpen)setPanelOpen(false);
   const [wx,wy]=assistantWindow.getPosition();
-  dragState={startX:wx,startY:wy,pointerX:x,pointerY:y};
+  dragState={startX:wx,startY:wy,pointerX:x,pointerY:y,vx:0,vy:0,lastX:x,lastY:y,lastTime:Date.now()};
 }
-function moveAvatarDrag(x,y){
+function moveAvatarDrag(x,y,vx,vy){
   if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
   const [w,h]=AVATAR_SIZE;
   const area=screen.getDisplayNearestPoint({x,y}).workArea;
@@ -179,12 +186,64 @@ function moveAvatarDrag(x,y){
   let ny=dragState.startY+y-dragState.pointerY;
   nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
   ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
+  dragState.vx=Number.isFinite(vx)?vx:dragState.vx;
+  dragState.vy=Number.isFinite(vy)?vy:dragState.vy;
   assistantWindow.setPosition(Math.round(nx),Math.round(ny),false);
+  dragState.startX=nx+x-dragState.pointerX;
+  dragState.startY=ny+y-dragState.pointerY;
+  dragState.pointerX=x;
+  dragState.pointerY=y;
 }
-function endAvatarDrag(){
+function endAvatarDrag(vx,vy){
   if(!dragState)return;
+  const state=dragState;
   dragState=null;
-  saveAvatarCenter(avatarCenter());
+  const finalVx=Number.isFinite(vx)?vx:state.vx||0;
+  const finalVy=Number.isFinite(vy)?vy:state.vy||0;
+  const speed=Math.hypot(finalVx,finalVy);
+  if(speed<650){saveAvatarCenter(avatarCenter());return;}
+  startAvatarPhysics(finalVx,finalVy);
+}
+function startAvatarPhysics(vx,vy){
+  stopAvatarPhysics();
+  if(!assistantWindow||assistantWindow.isDestroyed())return;
+  const [w,h]=AVATAR_SIZE;
+  let position=assistantWindow.getPosition();
+  let px=position[0],py=position[1];
+  let velX=Math.max(-2600,Math.min(2600,vx));
+  let velY=Math.max(-2600,Math.min(2600,vy));
+  let bounces=0;
+  let last=Date.now();
+  const gravity=980;
+  const restitution=0.68;
+  const air=0.992;
+  const maxBounces=5;
+  physicsTimer=setInterval(()=>{
+    if(!assistantWindow||assistantWindow.isDestroyed()){stopAvatarPhysics();return;}
+    const now=Date.now();
+    const dt=Math.min(.032,Math.max(.008,(now-last)/1000));
+    last=now;
+    velY+=gravity*dt;
+    velX*=Math.pow(air,dt*60);
+    velY*=Math.pow(air,dt*60);
+    px+=velX*dt; py+=velY*dt;
+    const point={x:Math.round(px+w/2),y:Math.round(py+h/2)};
+    const area=screen.getDisplayNearestPoint(point).workArea;
+    let hit=null;
+    if(px<=area.x){px=area.x;velX=Math.abs(velX)*restitution;hit='left';}
+    else if(px+w>=area.x+area.width){px=area.x+area.width-w;velX=-Math.abs(velX)*restitution;hit='right';}
+    if(py<=area.y){py=area.y;velY=Math.abs(velY)*restitution;hit=hit||'top';}
+    else if(py+h>=area.y+area.height){py=area.y+area.height-h;velY=-Math.abs(velY)*restitution;hit=hit||'bottom';}
+    if(hit){
+      bounces++;
+      if(!assistantWindow.isDestroyed())assistantWindow.webContents.send('avatar-edge-bounce',hit);
+    }
+    assistantWindow.setPosition(Math.round(px),Math.round(py),false);
+    if(bounces>=maxBounces || (bounces>0 && Math.hypot(velX,velY)<210)){
+      stopAvatarPhysics();
+      saveAvatarCenter(avatarCenter());
+    }
+  },16);
 }
 
 function openGenerator(slug){
@@ -249,11 +308,13 @@ function createAssistant(){
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   assistantWindow.setAlwaysOnTop(true,'floating');
+  assistantWindow.setSkipTaskbar(true);
   assistantWindow.setIgnoreMouseEvents(false);
   assistantWindow.setFocusable(true);
   assistantWindow.loadFile(path.join(__dirname,'assistant.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{
     resizeForState(false);
+    assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
     assistantWindow.webContents.send('update-state',updateState);
     assistantWindow.webContents.send('app-version',app.getVersion());
