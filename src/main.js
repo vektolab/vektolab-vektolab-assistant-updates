@@ -24,7 +24,7 @@ let dragMoved = false;
 const MAX_BOUNCES = 5;
 
 const AVATAR_SIZE = [90,90];
-const PANEL_SIZE = [430,650];
+const PANEL_SIZE = [430,640];
 const CATALOG_SIZE = [620,780];
 const POSITION_FILE = 'window-position.json';
 const CONTENT_CHECK_MINUTES = 30;
@@ -147,8 +147,14 @@ function saveAvatarCenter(c){
 function avatarCenter(){
   if(!assistantWindow||assistantWindow.isDestroyed())return loadSavedAvatarCenter();
   const [x,y]=assistantWindow.getPosition();
-  // El avatar está en la esquina inferior derecha del panel: right 9 + 78/2, bottom 7 + 78/2.
-  if(panelOpen)return{x:x+382,y:y+604};
+  // El avatar está en la esquina inferior derecha del panel.
+  // Debe coincidir exactamente con .avatar-wrap de assistant.html: right 9px, bottom 7px, 78x78.
+  if(panelOpen){
+    const avatarW=78, avatarH=78;
+    const panelW=panelMode==='catalog'?CATALOG_SIZE[0]:PANEL_SIZE[0];
+    const panelH=panelMode==='catalog'?CATALOG_SIZE[1]:PANEL_SIZE[1];
+    return{x:x+panelW-9-avatarW/2,y:y+panelH-7-avatarH/2};
+  }
   return{x:x+45,y:y+45};
 }
 
@@ -218,8 +224,9 @@ function resizeForState(open,mode='home',centerOverride=null){
   if(open){
     panelMode=mode;
     const [w,h]=mode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
-    const ax=mode==='catalog'?CATALOG_SIZE[0]-9-34:430-9-39;
-    const ay=mode==='catalog'?CATALOG_SIZE[1]-7-34:650-7-39;
+    const avatarW=78, avatarH=78;
+    const ax=mode==='catalog'?CATALOG_SIZE[0]-9-avatarW/2:PANEL_SIZE[0]-9-avatarW/2;
+    const ay=mode==='catalog'?CATALOG_SIZE[1]-7-avatarH/2:PANEL_SIZE[1]-7-avatarH/2;
     let x=Math.round(c.x-ax), y=Math.round(c.y-ay);
     const area=screen.getDisplayNearestPoint({x:Math.round(c.x),y:Math.round(c.y)}).workArea;
     x=Math.max(area.x+4,Math.min(x,area.x+area.width-w-4));
@@ -323,8 +330,11 @@ function openCatalog(){
   const c=avatarCenter();panelOpen=true;panelMode='catalog';
   assistantWindow.setSize(CATALOG_SIZE[0],CATALOG_SIZE[1],false);
   const area=screen.getDisplayNearestPoint({x:Math.round(c.x),y:Math.round(c.y)}).workArea;
-  const x=Math.max(area.x+4,Math.min(Math.round(c.x-(CATALOG_SIZE[0]-43)),area.x+area.width-CATALOG_SIZE[0]-4));
-  const y=Math.max(area.y+4,Math.min(Math.round(c.y-(CATALOG_SIZE[1]-41)),area.y+area.height-CATALOG_SIZE[1]-4));
+  const avatarW=78, avatarH=78;
+  const avatarCenterOffsetX=CATALOG_SIZE[0]-9-avatarW/2;
+  const avatarCenterOffsetY=CATALOG_SIZE[1]-7-avatarH/2;
+  const x=Math.max(area.x+4,Math.min(Math.round(c.x-avatarCenterOffsetX),area.x+area.width-CATALOG_SIZE[0]-4));
+  const y=Math.max(area.y+4,Math.min(Math.round(c.y-avatarCenterOffsetY),area.y+area.height-CATALOG_SIZE[1]-4));
   assistantWindow.setPosition(x,y,false);
   assistantWindow.webContents.send('catalog-mode');
   assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
