@@ -303,15 +303,11 @@ function createPanelWindow(mode='home'){
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
   });
   panelWindow.setAlwaysOnTop(true,'floating');
-  panelWindow.on('blur',()=> {
-    if (!(panelMode==='home'||panelMode==='catalog')) return;
-    setTimeout(() => {
-      if (!panelWindow || panelWindow.isDestroyed()) return;
-      const focused = BrowserWindow.getFocusedWindow();
-      if (focused === assistantWindow) return;
-      if (focused !== panelWindow) closePanelWindow();
-    }, 30);
-  });
+  panelWindow.setIgnoreMouseEvents(false);
+  // No cerramos el panel por un simple cambio de foco.
+  // El panel se cierra mediante su botón X o cuando se hace clic fuera
+  // a través de su propio mecanismo de interacción.
+  panelWindow.on('blur',()=>{});
   panelWindow.on('closed',()=>{panelWindow=null;panelOpen=false;panelMode='home';});
   positionPanelWindow();
   return panelWindow;
@@ -359,16 +355,31 @@ function positionAvatar(){
 }
 function togglePanel(){
   if(!assistantWindow || assistantWindow.isDestroyed()) return;
-  if(panelWindow&&!panelWindow.isDestroyed()){closePanelWindow();return;}
-  assistantWindow.showInactive();
+
+  if(panelWindow && !panelWindow.isDestroyed()){
+    if(panelWindow.isVisible()){
+      closePanelWindow();
+    }else{
+      panelWindow.show();
+      panelWindow.focus();
+    }
+    return;
+  }
+
   const w=createPanelWindow('home');
-  w.loadFile(path.join(__dirname,'assistant.html'));
-  w.webContents.once('did-finish-load',()=>{
-    if(!w||w.isDestroyed())return;
-    w.webContents.send('update-state',updateState);w.webContents.send('app-version',app.getVersion());
-    sendGenerators();sendDesigns();
+  if(!w || w.isDestroyed()) return;
+
+  w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
+    if(!w || w.isDestroyed()) return;
+    w.webContents.send('update-state',updateState);
+    w.webContents.send('app-version',app.getVersion());
+    sendGenerators();
+    sendDesigns();
     if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
-    w.show();w.focus();
+    w.show();
+    w.focus();
+  }).catch(err=>{
+    console.error('[Vektolab] No se pudo abrir el panel:',err);
   });
 }
 

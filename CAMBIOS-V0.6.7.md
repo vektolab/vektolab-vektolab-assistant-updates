@@ -1,4 +1,4 @@
-# Vekto v0.6.9
+# Vekto v0.7.0
 
 - El avatar de Vekto y el panel ahora son ventanas independientes.
 - El avatar permanece siempre en su posición y no se mueve al abrir/cerrar el panel.

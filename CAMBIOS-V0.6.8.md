@@ -1,4 +1,4 @@
-# Vekto v0.6.9
+# Vekto v0.7.0
 
 Corrección del panel principal:
 
