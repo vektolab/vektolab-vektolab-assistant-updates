@@ -1,7 +1,7 @@
 {
   "name": "vektolab-assistant",
-  "version": "0.8.7",
-  "description": "Vekto - asistente de escritorio de Vektolab",
+  "version": "1.0.0",
+  "description": "Vekto - asistente de escritorio de Vektolab · Genesis",
   "main": "src/main.js",
   "author": "Vektolab",
   "scripts": {

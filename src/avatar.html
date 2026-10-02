@@ -10,12 +10,8 @@
 html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
 body{user-select:none;-webkit-user-select:none}
 #avatar{position:absolute;inset:8px;border-radius:50%;cursor:grab;filter:drop-shadow(0 8px 18px rgba(0,0,0,.18));transform-origin:50% 78%;touch-action:none;user-select:none}
-#avatar.dragging{cursor:grabbing;filter:drop-shadow(0 13px 24px rgba(0,0,0,.25));animation:vektoSway .55s ease-in-out infinite alternate}
+#avatar.dragging{cursor:grabbing;filter:drop-shadow(0 13px 24px rgba(0,0,0,.25))}
 #avatar img{width:100%;height:100%;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
-#avatar.edge-hit{animation:vektoEdgeHit .24s ease-out}
-#avatar.dragging.edge-hit{animation:vektoEdgeHit .24s ease-out}
-@keyframes vektoSway{from{transform:rotate(calc(var(--tilt,0deg) - 4deg))}to{transform:rotate(calc(var(--tilt,0deg) + 4deg))}}
-@keyframes vektoEdgeHit{0%{transform:scale(1) rotate(var(--tilt,0deg))}35%{transform:scale(.86) rotate(calc(var(--tilt,0deg) - 8deg))}70%{transform:scale(1.06) rotate(calc(var(--tilt,0deg) + 5deg))}100%{transform:scale(1) rotate(var(--tilt,0deg))}}
 </style>
 </head>
 <body>

@@ -20,20 +20,13 @@ let avatarAnchor = null;
 let panelMode = 'home';
 let dragState = null;
 let currentGenerator = null;
-let physicsTimer = null;
-let physicsBounceCount = 0;
 let dragMoved = false;
-const MAX_BOUNCES = 5;
 
 const AVATAR_SIZE = [90,90];
 const AVATAR_VISUAL_SIZE = [78,78];
-const PANEL_SIZE = [430,640];
-// Posición visual del avatar dentro de la ventana. La ventana cambia de tamaño
-// al abrir el menú, pero estas coordenadas mantienen al avatar en el mismo
-// punto de pantalla.
-const AVATAR_CLOSED_OFFSET = { x: 3, y: 5 };
-const AVATAR_HOME_OFFSET = { x: 343, y: 555 };
-const AVATAR_CATALOG_OFFSET = { x: 533, y: 695 };
+const PANEL_SIZE = [455,680];
+// La imagen ocupa 78x78 dentro de una ventana transparente de 90x90 (inset 8px).
+const AVATAR_CLOSED_OFFSET = { x: 8, y: 8 };
 const CATALOG_SIZE = [620,780];
 const POSITION_FILE = 'window-position.json';
 const CONTENT_CHECK_MINUTES = 30;
@@ -194,73 +187,6 @@ function saveAvatarPosition(p){
 }
 function avatarTopLeft(){return ensureAvatarPosition();}
 
-// La ventana nunca vuelve a ser una fuente de verdad para la posición del avatar.
-function stopAvatarPhysics(save=true){
-  if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
-  if(save&&assistantWindow&&!assistantWindow.isDestroyed())saveAvatarPosition(avatarTopLeft());
-}
-function startAvatarPhysics(vx,vy){
-  stopAvatarPhysics(false);
-  if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
-  const speed=Math.hypot(vx,vy);
-  const [w,h]=AVATAR_VISUAL_SIZE;
-  const start=ensureAvatarPosition();
-  const area=getAvatarAreaAt(start.x,start.y);
-  const minX=area.x;
-  const maxX=area.x+area.width-w;
-  const minY=area.y;
-  const maxY=area.y+area.height-h;
-  let pos=[
-    Math.max(minX,Math.min(Math.round(start.x),maxX)),
-    Math.max(minY,Math.min(Math.round(start.y),maxY))
-  ];
-  avatarAnchor={x:pos[0],y:pos[1]};
-  {const wp=avatarWindowPosition(pos[0],pos[1]);assistantWindow.setPosition(wp.x,wp.y,false);}
-
-  if(speed<180){saveAvatarPosition({x:pos[0],y:pos[1]});return;}
-
-  physicsBounceCount=0;
-  let last=Date.now();
-  let velocityX=Math.max(-2200,Math.min(2200,vx));
-  let velocityY=Math.max(-2200,Math.min(2200,vy));
-  const gravity=520;
-  const friction=0.992;
-
-  physicsTimer=setInterval(()=>{
-    if(!assistantWindow||assistantWindow.isDestroyed()){stopAvatarPhysics(false);return;}
-    if(panelOpen){stopAvatarPhysics(false);return;}
-    const now=Date.now();
-    const dt=Math.min(0.032,Math.max(0.008,(now-last)/1000));
-    last=now;
-
-    velocityY+=gravity*dt;
-    velocityX*=Math.pow(friction,dt*60);
-    velocityY*=Math.pow(friction,dt*60);
-    pos[0]+=velocityX*dt;
-    pos[1]+=velocityY*dt;
-
-    let bounced=false;
-    let direction=null;
-    if(pos[0]<minX){pos[0]=minX;velocityX=Math.abs(velocityX)*0.72;bounced=true;direction='left';}
-    else if(pos[0]>maxX){pos[0]=maxX;velocityX=-Math.abs(velocityX)*0.72;bounced=true;direction='right';}
-    if(pos[1]<minY){pos[1]=minY;velocityY=Math.abs(velocityY)*0.72;bounced=true;direction=direction||'top';}
-    else if(pos[1]>maxY){pos[1]=maxY;velocityY=-Math.abs(velocityY)*0.72;bounced=true;direction=direction||'bottom';}
-
-    if(bounced){
-      physicsBounceCount++;
-      if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.webContents.send('avatar-edge-bounce',direction);
-    }
-
-    // La posición física y la posición persistente son la misma coordenada.
-    avatarAnchor={x:Math.round(pos[0]),y:Math.round(pos[1])};
-    {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
-
-    if(physicsBounceCount>=MAX_BOUNCES||Math.hypot(velocityX,velocityY)<75){
-      saveAvatarPosition(avatarAnchor);
-      stopAvatarPhysics(false);
-    }
-  },16);
-}
 function positionPanelWindow(){
   if(!panelWindow||panelWindow.isDestroyed())return;
   const p=ensureAvatarPosition();
@@ -294,10 +220,6 @@ function createPanelWindow(mode='home'){
   panelWindow.setAlwaysOnTop(true,'floating');
   panelWindow.setSkipTaskbar(true);
   panelWindow.on('closed',()=>{panelWindow=null;panelOpen=false;panelMode='home';});
-  panelWindow.on('blur',()=>{
-    if(!panelWindow||panelWindow.isDestroyed())return;
-    if(panelOpen) setPanelOpen(false);
-  });
   return panelWindow;
 }
 function setPanelOpen(open){
@@ -314,12 +236,16 @@ function setPanelOpen(open){
         sendGenerators();sendDesigns();
         if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
         positionPanelWindow();
-        w.show();w.focus();
+        w.show();
+        assistantWindow.setAlwaysOnTop(true,'floating');
+        assistantWindow.moveTop();
       });
     }else{
       panelMode='home';
       positionPanelWindow();
-      panelWindow.show();panelWindow.focus();
+      panelWindow.show();
+      assistantWindow.setAlwaysOnTop(true,'floating');
+      assistantWindow.moveTop();
     }
     return;
   }
@@ -330,8 +256,6 @@ function setPanelOpen(open){
 }
 function beginAvatarDrag(x,y){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  if(panelOpen)setPanelOpen(false);
-  stopAvatarPhysics(false);
   const p=ensureAvatarPosition();
   dragState={startX:p.x,startY:p.y,pointerX:x,pointerY:y};
   dragMoved=false;
@@ -359,14 +283,10 @@ function moveAvatarDrag(x,y){
   {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
   if(panelOpen)positionPanelWindow();
 }
-function endAvatarDrag(vx=0,vy=0){
+function endAvatarDrag(){
   if(!dragState)return;
   dragState=null;
-  if(Math.hypot(vx||0,vy||0)>=180&&dragMoved){
-    startAvatarPhysics(vx||0,vy||0);
-  }else{
-    saveAvatarPosition(avatarTopLeft());
-  }
+  saveAvatarPosition(avatarTopLeft());
 }
 
 function openGenerator(slug){
@@ -406,7 +326,9 @@ function openCatalog(){
     if(!w||w.isDestroyed())return;
     positionPanelWindow();
     w.webContents.send('catalog-mode');
-    w.show();w.focus();
+    w.show();
+    assistantWindow.setAlwaysOnTop(true,'floating');
+    assistantWindow.moveTop();
   };
   if(w.webContents.getURL()) showCatalog();
   else w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
@@ -474,7 +396,7 @@ app.whenReady().then(()=>{
   ipcMain.on('set-panel-open',(_e,open)=>setPanelOpen(!!open));
   ipcMain.on('avatar-drag-start',(_e,d)=>beginAvatarDrag(d?.x||0,d?.y||0));
   ipcMain.on('avatar-drag-move',(_e,d)=>moveAvatarDrag(d?.x||0,d?.y||0));
-  ipcMain.on('avatar-drag-end',(_e,d)=>endAvatarDrag(d?.vx||0,d?.vy||0));
+  ipcMain.on('avatar-drag-end',()=>endAvatarDrag());
   ipcMain.on('quit-app',()=>app.quit());
   ipcMain.on('check-updates',()=>checkForUpdates());
   ipcMain.on('download-update',()=>downloadUpdate());
