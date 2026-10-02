@@ -15,6 +15,7 @@ let updateCheckRunning = false;
 let contentUpdater = null;
 let contentCheckRunning = false;
 let panelOpen = false;
+let avatarAnchor = null;
 let panelMode = 'home';
 let dragState = null;
 let currentGenerator = null;
@@ -137,25 +138,31 @@ function loadSavedAvatarCenter(){
       const p=clampAvatarPosition(d.x-w/2,d.y-h/2);
       return{x:p.x+w/2,y:p.y+h/2};
     }
-  }catch(_){}
+  }catch(_){ }
   const a=screen.getPrimaryDisplay().workArea;
   return{x:Math.round(a.x+a.width-w/2-8),y:Math.round(a.y+a.height-h/2-8)};
 }
+function ensureAvatarAnchor(){
+  if(!avatarAnchor){
+    avatarAnchor=loadSavedAvatarCenter();
+  }
+  return avatarAnchor;
+}
+function setAvatarAnchor(c, clamp=true){
+  if(!c || !Number.isFinite(c.x) || !Number.isFinite(c.y)) return ensureAvatarAnchor();
+  const safe=clamp ? clampAvatarPosition(c.x-AVATAR_SIZE[0]/2,c.y-AVATAR_SIZE[1]/2) : {x:c.x-AVATAR_SIZE[0]/2,y:c.y-AVATAR_SIZE[1]/2};
+  avatarAnchor={x:safe.x+AVATAR_SIZE[0]/2,y:safe.y+AVATAR_SIZE[1]/2};
+  return avatarAnchor;
+}
 function saveAvatarCenter(c){
-  try{fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(c.x),y:Math.round(c.y)}));}catch(_){}
+  const a=setAvatarAnchor(c,true);
+  try{fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(a.x),y:Math.round(a.y)}));}catch(_){ }
 }
 function avatarCenter(){
-  if(!assistantWindow||assistantWindow.isDestroyed())return loadSavedAvatarCenter();
-  const [x,y]=assistantWindow.getPosition();
-  // El avatar está en la esquina inferior derecha del panel.
-  // Debe coincidir exactamente con .avatar-wrap de assistant.html: right 9px, bottom 7px, 78x78.
-  if(panelOpen){
-    const avatarW=78, avatarH=78;
-    const panelW=panelMode==='catalog'?CATALOG_SIZE[0]:PANEL_SIZE[0];
-    const panelH=panelMode==='catalog'?CATALOG_SIZE[1]:PANEL_SIZE[1];
-    return{x:x+panelW-9-avatarW/2,y:y+panelH-7-avatarH/2};
-  }
-  return{x:x+45,y:y+45};
+  // La posición del avatar es un estado independiente del tamaño temporal de la ventana.
+  // El menú puede mover la ventana grande para caber en pantalla, pero jamás modifica
+  // la posición real de Vekto.
+  return ensureAvatarAnchor();
 }
 
 function stopAvatarPhysics(save=true){
@@ -168,31 +175,31 @@ function startAvatarPhysics(vx,vy){
   if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
   const speed=Math.hypot(vx,vy);
   const [w,h]=AVATAR_SIZE;
-  // La física trabaja siempre sobre el área de trabajo que contiene a Vekto
-  // cuando comienza el lanzamiento. No volvemos a cambiar de monitor/área
-  // durante el rebote aunque la ventana quede momentáneamente cerca de un borde.
-  const startPos=assistantWindow.getPosition();
-  const startCenter={x:startPos[0]+w/2,y:startPos[1]+h/2};
-  const area=screen.getDisplayNearestPoint({x:Math.round(startCenter.x),y:Math.round(startCenter.y)}).workArea;
+
+  // Los límites de Windows se obtienen una vez al iniciar el movimiento y
+  // permanecen fijos durante todo el rebote. La posición real de Vekto es
+  // independiente de la ventana del menú.
+  const startCenter=ensureAvatarAnchor();
+  const display=screen.getDisplayNearestPoint({x:Math.round(startCenter.x),y:Math.round(startCenter.y)});
+  const area=display.workArea;
   const minX=area.x;
   const maxX=area.x+area.width-w;
   const minY=area.y;
   const maxY=area.y+area.height-h;
-  const clampX=Math.max(minX,Math.min(Math.round(startPos[0]),maxX));
-  const clampY=Math.max(minY,Math.min(Math.round(startPos[1]),maxY));
-
-  if(clampX!==startPos[0]||clampY!==startPos[1]){
-    assistantWindow.setPosition(clampX,clampY,false);
-  }
+  let pos=[
+    Math.max(minX,Math.min(Math.round(startCenter.x-w/2),maxX)),
+    Math.max(minY,Math.min(Math.round(startCenter.y-h/2),maxY))
+  ];
+  avatarAnchor={x:pos[0]+w/2,y:pos[1]+h/2};
+  assistantWindow.setPosition(pos[0],pos[1],false);
 
   if(speed<180){
-    saveAvatarCenter({x:clampX+w/2,y:clampY+h/2});
+    saveAvatarCenter(avatarAnchor);
     return;
   }
 
   physicsBounceCount=0;
   let last=Date.now();
-  let pos=[clampX,clampY];
   let velocityX=Math.max(-2200,Math.min(2200,vx));
   let velocityY=Math.max(-2200,Math.min(2200,vy));
   const gravity=520;
@@ -212,29 +219,20 @@ function startAvatarPhysics(vx,vy){
 
     let bounced=false;
     let direction=null;
-
-    // Estos límites quedan fijados al comenzar el lanzamiento.
-    // Abrir/cerrar el menú antes del lanzamiento no puede alterar la física.
-    if(pos[0]<minX){
-      pos[0]=minX; velocityX=Math.abs(velocityX)*0.72; bounced=true; direction='left';
-    }else if(pos[0]>maxX){
-      pos[0]=maxX; velocityX=-Math.abs(velocityX)*0.72; bounced=true; direction='right';
-    }
-    if(pos[1]<minY){
-      pos[1]=minY; velocityY=Math.abs(velocityY)*0.72; bounced=true; direction=direction||'top';
-    }else if(pos[1]>maxY){
-      pos[1]=maxY; velocityY=-Math.abs(velocityY)*0.72; bounced=true; direction=direction||'bottom';
-    }
+    if(pos[0]<minX){pos[0]=minX;velocityX=Math.abs(velocityX)*0.72;bounced=true;direction='left';}
+    else if(pos[0]>maxX){pos[0]=maxX;velocityX=-Math.abs(velocityX)*0.72;bounced=true;direction='right';}
+    if(pos[1]<minY){pos[1]=minY;velocityY=Math.abs(velocityY)*0.72;bounced=true;direction=direction||'top';}
+    else if(pos[1]>maxY){pos[1]=maxY;velocityY=-Math.abs(velocityY)*0.72;bounced=true;direction=direction||'bottom';}
 
     if(bounced){
       physicsBounceCount++;
       if(assistantWindow&&!assistantWindow.isDestroyed()) assistantWindow.webContents.send('avatar-edge-bounce',direction);
     }
     assistantWindow.setPosition(Math.round(pos[0]),Math.round(pos[1]),false);
+    avatarAnchor={x:pos[0]+w/2,y:pos[1]+h/2};
 
     if(physicsBounceCount>=MAX_BOUNCES || Math.hypot(velocityX,velocityY)<75){
-      // Guardamos exactamente la posición física, no una posición derivada del menú.
-      saveAvatarCenter({x:pos[0]+w/2,y:pos[1]+h/2});
+      saveAvatarCenter(avatarAnchor);
       stopAvatarPhysics(false);
     }
   },16);
@@ -258,14 +256,15 @@ function resizeForState(open,mode='home',centerOverride=null){
     panelMode='home';
     assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
     const safe=clampAvatarPosition(c.x-AVATAR_SIZE[0]/2,c.y-AVATAR_SIZE[1]/2);
+    avatarAnchor={x:safe.x+AVATAR_SIZE[0]/2,y:safe.y+AVATAR_SIZE[1]/2};
     assistantWindow.setPosition(safe.x,safe.y,false);
   }
 }
 function setPanelOpen(open){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  // Capturamos la posición REAL del avatar antes de cambiar el tamaño de la ventana.
-  // Esto evita perderla al pasar de 90x90 a la ventana del menú y volver.
-  const c=avatarCenter();
+  // Nunca derivamos la posición del avatar desde la ventana grande del menú.
+  // La posición persistente de Vekto es la única fuente de verdad.
+  const c=ensureAvatarAnchor();
   panelOpen=!!open;
   if(panelOpen){
     resizeForState(true,'home',c);
@@ -279,21 +278,16 @@ function setPanelOpen(open){
 function beginAvatarDrag(x,y){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
   stopAvatarPhysics(false);
-  const [wx,wy]=assistantWindow.getPosition();
-  dragState={startX:wx,startY:wy,pointerX:x,pointerY:y};
+  const c=ensureAvatarAnchor();
+  dragState={startX:Math.round(c.x-AVATAR_SIZE[0]/2),startY:Math.round(c.y-AVATAR_SIZE[1]/2),pointerX:x,pointerY:y};
   dragMoved=false;
 }
 function moveAvatarDrag(x,y){
   if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
   if(Math.abs(x-dragState.pointerX)+Math.abs(y-dragState.pointerY)>3)dragMoved=true;
 
-  // Si el usuario realmente arrastra con el menú abierto, primero lo minimizamos
-  // manteniendo el avatar exactamente debajo del cursor. Un simple clic no lo mueve.
   if(panelOpen && dragMoved){
-    // Guardamos la posición del avatar mientras todavía estamos en modo menú.
-    // Después de cerrar el menú la ventana cambia de tamaño y no debemos recalcular
-    // la posición usando las coordenadas de la ventana grande.
-    const c=avatarCenter();
+    const c=ensureAvatarAnchor();
     setPanelOpen(false);
     dragState.startX=Math.round(c.x-AVATAR_SIZE[0]/2);
     dragState.startY=Math.round(c.y-AVATAR_SIZE[1]/2);
@@ -308,6 +302,7 @@ function moveAvatarDrag(x,y){
   nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
   ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
   assistantWindow.setPosition(Math.round(nx),Math.round(ny),false);
+  avatarAnchor={x:Math.round(nx)+w/2,y:Math.round(ny)+h/2};
 }
 function endAvatarDrag(vx=0,vy=0){
   if(!dragState)return;
@@ -389,7 +384,8 @@ function createAssistant(){
   assistantWindow.setSkipTaskbar(true);
   assistantWindow.loadFile(path.join(__dirname,'assistant.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{
-    resizeForState(false);
+    avatarAnchor=loadSavedAvatarCenter();
+    resizeForState(false, 'home', avatarAnchor);
     assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
     assistantWindow.webContents.send('update-state',updateState);
@@ -444,7 +440,12 @@ app.whenReady().then(()=>{
   });
 
   contentUpdater.ensureSeeded().then(()=>{sendGenerators();sendDesigns();syncContent();});
-  screen.on('display-metrics-changed',()=>{if(assistantWindow&&!assistantWindow.isDestroyed()&&!panelOpen)resizeForState(false);});
+  screen.on('display-metrics-changed',()=>{
+    if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
+    const c=setAvatarAnchor(ensureAvatarAnchor(),true);
+    resizeForState(false,'home',c);
+    saveAvatarCenter(c);
+  });
   setTimeout(()=>{checkForUpdates();syncContent();},7000);
   setInterval(checkForUpdates,UPDATE_CHECK_MINUTES*60*1000);
   setInterval(syncContent,CONTENT_CHECK_MINUTES*60*1000);
