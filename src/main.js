@@ -26,6 +26,12 @@ const MAX_BOUNCES = 5;
 
 const AVATAR_SIZE = [90,90];
 const PANEL_SIZE = [430,640];
+// Posición visual del avatar dentro de la ventana. La ventana cambia de tamaño
+// al abrir el menú, pero estas coordenadas mantienen al avatar en el mismo
+// punto de pantalla.
+const AVATAR_CLOSED_OFFSET = { x: 3, y: 5 };
+const AVATAR_HOME_OFFSET = { x: 343, y: 555 };
+const AVATAR_CATALOG_OFFSET = { x: 533, y: 695 };
 const CATALOG_SIZE = [620,780];
 const POSITION_FILE = 'window-position.json';
 const CONTENT_CHECK_MINUTES = 30;
@@ -179,6 +185,24 @@ function saveAvatarPosition(p){
 }
 function avatarTopLeft(){return ensureAvatarPosition();}
 
+// Sincroniza la posición persistente con la posición física real de la ventana
+// pequeña. Esto se usa SOLO antes de abrir el menú, cuando la ventana todavía
+// representa exclusivamente al avatar. El menú nunca vuelve a escribir esta
+// posición.
+function captureAvatarPositionFromWindow(){
+  if(!assistantWindow||assistantWindow.isDestroyed())return ensureAvatarPosition();
+  const bounds=assistantWindow.getBounds();
+  // La ventana cerrada es 90x90 y el avatar visual ocupa 78x78 con
+  // right:9px / bottom:7px. Por eso la posición real de Vekto no es
+  // exactamente el origen de la ventana.
+  const p=clampAvatarPosition(
+    bounds.x + AVATAR_CLOSED_OFFSET.x,
+    bounds.y + AVATAR_CLOSED_OFFSET.y
+  );
+  avatarAnchor={x:p.x,y:p.y};
+  return avatarAnchor;
+}
+
 function stopAvatarPhysics(save=true){
   if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
   if(save&&assistantWindow&&!assistantWindow.isDestroyed())saveAvatarPosition(avatarTopLeft());
@@ -247,34 +271,52 @@ function startAvatarPhysics(vx,vy){
 }
 function resizeForState(open,mode='home'){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
+
+  // avatarAnchor SIEMPRE representa la esquina superior izquierda visual de
+  // Vekto en pantalla. El menú se posiciona alrededor de ese punto; nunca
+  // se reutilizan las coordenadas del menú como si fueran las del avatar.
   const p=ensureAvatarPosition();
+
   if(open){
     panelMode=mode;
     const [w,h]=mode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
-    const avatarW=78,avatarH=78;
-    const ax=mode==='catalog'?CATALOG_SIZE[0]-9-avatarW/2:PANEL_SIZE[0]-9-avatarW/2;
-    const ay=mode==='catalog'?CATALOG_SIZE[1]-7-avatarH/2:PANEL_SIZE[1]-7-avatarH/2;
-    let x=Math.round(p.x+AVATAR_SIZE[0]/2-ax);
-    let y=Math.round(p.y+AVATAR_SIZE[1]/2-ay);
+    const offset=mode==='catalog'?AVATAR_CATALOG_OFFSET:AVATAR_HOME_OFFSET;
     const area=getAvatarAreaAt(p.x,p.y);
-    x=Math.max(area.x+4,Math.min(x,area.x+area.width-w-4));
-    y=Math.max(area.y+4,Math.min(y,area.y+area.height-h-4));
+
+    // La ventana grande se coloca de modo que el avatar quede EXACTAMENTE
+    // donde estaba antes de abrir. Si el panel no entra, solo se desplaza
+    // el panel; p/ avatarAnchor no se modifica.
+    const desiredX=Math.round(p.x-offset.x);
+    const desiredY=Math.round(p.y-offset.y);
+    const safeX=Math.max(area.x+4,Math.min(desiredX,area.x+area.width-w-4));
+    const safeY=Math.max(area.y+4,Math.min(desiredY,area.y+area.height-h-4));
+
     assistantWindow.setSize(w,h,false);
-    assistantWindow.setPosition(x,y,false);
+    assistantWindow.setPosition(safeX,safeY,false);
   }else{
     panelMode='home';
-    assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
-    // Volver al punto exacto guardado, sin recalcularlo a partir del menú.
     const safe=clampAvatarPosition(p.x,p.y);
     avatarAnchor=safe;
-    assistantWindow.setPosition(safe.x,safe.y,false);
+    assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
+    // Restaurar la ventana pequeña compensando la posición del avatar dentro
+    // de ella. Así cerrar el menú NO mueve Vekto.
+    assistantWindow.setPosition(
+      safe.x-AVATAR_CLOSED_OFFSET.x,
+      safe.y-AVATAR_CLOSED_OFFSET.y,
+      false
+    );
   }
 }
+
 function setPanelOpen(open){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
   const shouldOpen=!!open;
   if(shouldOpen===panelOpen)return;
-  if(shouldOpen)stopAvatarPhysics(true);
+  if(shouldOpen){
+    // Si venimos de la ventana pequeña, esta es la única posición que cuenta.
+    captureAvatarPositionFromWindow();
+    stopAvatarPhysics(true);
+  }
   panelOpen=shouldOpen;
   resizeForState(panelOpen,'home');
   assistantWindow.setSkipTaskbar(true);
@@ -349,15 +391,9 @@ function openDesign(slug){
 }
 function openCatalog(){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const p=ensureAvatarPosition();panelOpen=true;panelMode='catalog';
-  assistantWindow.setSize(CATALOG_SIZE[0],CATALOG_SIZE[1],false);
-  const area=getAvatarAreaAt(p.x,p.y);
-  const avatarW=78, avatarH=78;
-  const avatarCenterOffsetX=CATALOG_SIZE[0]-9-avatarW/2;
-  const avatarCenterOffsetY=CATALOG_SIZE[1]-7-avatarH/2;
-  const x=Math.max(area.x+4,Math.min(Math.round(p.x+AVATAR_SIZE[0]/2-avatarCenterOffsetX),area.x+area.width-CATALOG_SIZE[0]-4));
-  const y=Math.max(area.y+4,Math.min(Math.round(p.y+AVATAR_SIZE[1]/2-avatarCenterOffsetY),area.y+area.height-CATALOG_SIZE[1]-4));
-  assistantWindow.setPosition(x,y,false);
+  const p=ensureAvatarPosition();
+  panelOpen=true;
+  resizeForState(true,'catalog');
   assistantWindow.webContents.send('catalog-mode');
   assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
 }
