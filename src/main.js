@@ -122,81 +122,86 @@ function sendDesigns(){
 }
 
 function getPositionFile(){return path.join(app.getPath('userData'),POSITION_FILE);}
-function clampAvatarPosition(x,y){
+
+// La posición de Vekto se guarda siempre como la esquina superior izquierda
+// de su ventana pequeña. El menú puede cambiar el tamaño de la ventana,
+// pero jamás cambia esta posición.
+function getAvatarAreaAt(x,y){
   const [w,h]=AVATAR_SIZE;
-  const area=screen.getDisplayNearestPoint({x:Math.round(x+w/2),y:Math.round(y+h/2)}).workArea;
+  return screen.getDisplayNearestPoint({x:Math.round(x+w/2),y:Math.round(y+h/2)}).workArea;
+}
+function clampAvatarPosition(x,y,area=null){
+  const [w,h]=AVATAR_SIZE;
+  const a=area||getAvatarAreaAt(x,y);
   return {
-    x:Math.max(area.x,Math.min(Math.round(x),area.x+area.width-w)),
-    y:Math.max(area.y,Math.min(Math.round(y),area.y+area.height-h))
+    x:Math.max(a.x,Math.min(Math.round(x),a.x+a.width-w)),
+    y:Math.max(a.y,Math.min(Math.round(y),a.y+a.height-h))
   };
 }
-function loadSavedAvatarCenter(){
+function loadSavedAvatarPosition(){
   const [w,h]=AVATAR_SIZE;
   try{
     const d=JSON.parse(fs.readFileSync(getPositionFile(),'utf8'));
     if(Number.isFinite(d.x)&&Number.isFinite(d.y)){
-      const p=clampAvatarPosition(d.x-w/2,d.y-h/2);
-      return{x:p.x+w/2,y:p.y+h/2};
+      // Los archivos anteriores guardaban el centro. Convertimos y
+      // normalizamos para que ninguna versión anterior pueda dejar a Vekto
+      // fuera del área de trabajo.
+      const looksLikeCenter=true;
+      const rawX=looksLikeCenter?d.x-w/2:d.x;
+      const rawY=looksLikeCenter?d.y-h/2:d.y;
+      return clampAvatarPosition(rawX,rawY);
     }
   }catch(_){ }
   const a=screen.getPrimaryDisplay().workArea;
-  return{x:Math.round(a.x+a.width-w/2-8),y:Math.round(a.y+a.height-h/2-8)};
+  return {x:Math.round(a.x+a.width-w-8),y:Math.round(a.y+a.height-h-8)};
 }
-function ensureAvatarAnchor(){
+function ensureAvatarPosition(){
   if(!avatarAnchor){
-    avatarAnchor=loadSavedAvatarCenter();
+    avatarAnchor=loadSavedAvatarPosition();
   }
+  avatarAnchor=clampAvatarPosition(avatarAnchor.x,avatarAnchor.y);
   return avatarAnchor;
 }
-function setAvatarAnchor(c, clamp=true){
-  if(!c || !Number.isFinite(c.x) || !Number.isFinite(c.y)) return ensureAvatarAnchor();
-  const safe=clamp ? clampAvatarPosition(c.x-AVATAR_SIZE[0]/2,c.y-AVATAR_SIZE[1]/2) : {x:c.x-AVATAR_SIZE[0]/2,y:c.y-AVATAR_SIZE[1]/2};
-  avatarAnchor={x:safe.x+AVATAR_SIZE[0]/2,y:safe.y+AVATAR_SIZE[1]/2};
+function setAvatarPosition(x,y,clamp=true){
+  const p=clamp?clampAvatarPosition(x,y):{x:Math.round(x),y:Math.round(y)};
+  avatarAnchor={x:p.x,y:p.y};
+  if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.setPosition(p.x,p.y,false);
   return avatarAnchor;
 }
-function saveAvatarCenter(c){
-  const a=setAvatarAnchor(c,true);
-  try{fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(a.x),y:Math.round(a.y)}));}catch(_){ }
+function saveAvatarPosition(p){
+  const safe=clampAvatarPosition(p.x,p.y);
+  avatarAnchor=safe;
+  try{
+    fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});
+    // Mantener compatibilidad con el archivo anterior: se guarda el centro.
+    fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(safe.x+AVATAR_SIZE[0]/2),y:Math.round(safe.y+AVATAR_SIZE[1]/2)}));
+  }catch(_){ }
 }
-function avatarCenter(){
-  // La posición del avatar es un estado independiente del tamaño temporal de la ventana.
-  // El menú puede mover la ventana grande para caber en pantalla, pero jamás modifica
-  // la posición real de Vekto.
-  return ensureAvatarAnchor();
-}
+function avatarTopLeft(){return ensureAvatarPosition();}
 
 function stopAvatarPhysics(save=true){
   if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
-  if(save && assistantWindow && !assistantWindow.isDestroyed()) saveAvatarCenter(avatarCenter());
+  if(save&&assistantWindow&&!assistantWindow.isDestroyed())saveAvatarPosition(avatarTopLeft());
 }
-
 function startAvatarPhysics(vx,vy){
   stopAvatarPhysics(false);
   if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
   const speed=Math.hypot(vx,vy);
   const [w,h]=AVATAR_SIZE;
-
-  // Los límites de Windows se obtienen una vez al iniciar el movimiento y
-  // permanecen fijos durante todo el rebote. La posición real de Vekto es
-  // independiente de la ventana del menú.
-  const startCenter=ensureAvatarAnchor();
-  const display=screen.getDisplayNearestPoint({x:Math.round(startCenter.x),y:Math.round(startCenter.y)});
-  const area=display.workArea;
+  const start=ensureAvatarPosition();
+  const area=getAvatarAreaAt(start.x,start.y);
   const minX=area.x;
   const maxX=area.x+area.width-w;
   const minY=area.y;
   const maxY=area.y+area.height-h;
   let pos=[
-    Math.max(minX,Math.min(Math.round(startCenter.x-w/2),maxX)),
-    Math.max(minY,Math.min(Math.round(startCenter.y-h/2),maxY))
+    Math.max(minX,Math.min(Math.round(start.x),maxX)),
+    Math.max(minY,Math.min(Math.round(start.y),maxY))
   ];
-  avatarAnchor={x:pos[0]+w/2,y:pos[1]+h/2};
+  avatarAnchor={x:pos[0],y:pos[1]};
   assistantWindow.setPosition(pos[0],pos[1],false);
 
-  if(speed<180){
-    saveAvatarCenter(avatarAnchor);
-    return;
-  }
+  if(speed<180){saveAvatarPosition({x:pos[0],y:pos[1]});return;}
 
   physicsBounceCount=0;
   let last=Date.now();
@@ -207,6 +212,7 @@ function startAvatarPhysics(vx,vy){
 
   physicsTimer=setInterval(()=>{
     if(!assistantWindow||assistantWindow.isDestroyed()){stopAvatarPhysics(false);return;}
+    if(panelOpen){stopAvatarPhysics(false);return;}
     const now=Date.now();
     const dt=Math.min(0.032,Math.max(0.008,(now-last)/1000));
     last=now;
@@ -226,28 +232,31 @@ function startAvatarPhysics(vx,vy){
 
     if(bounced){
       physicsBounceCount++;
-      if(assistantWindow&&!assistantWindow.isDestroyed()) assistantWindow.webContents.send('avatar-edge-bounce',direction);
+      if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.webContents.send('avatar-edge-bounce',direction);
     }
-    assistantWindow.setPosition(Math.round(pos[0]),Math.round(pos[1]),false);
-    avatarAnchor={x:pos[0]+w/2,y:pos[1]+h/2};
 
-    if(physicsBounceCount>=MAX_BOUNCES || Math.hypot(velocityX,velocityY)<75){
-      saveAvatarCenter(avatarAnchor);
+    // La posición física y la posición persistente son la misma coordenada.
+    avatarAnchor={x:Math.round(pos[0]),y:Math.round(pos[1])};
+    assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
+
+    if(physicsBounceCount>=MAX_BOUNCES||Math.hypot(velocityX,velocityY)<75){
+      saveAvatarPosition(avatarAnchor);
       stopAvatarPhysics(false);
     }
   },16);
 }
-function resizeForState(open,mode='home',centerOverride=null){
+function resizeForState(open,mode='home'){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const c=centerOverride || avatarCenter();
+  const p=ensureAvatarPosition();
   if(open){
     panelMode=mode;
     const [w,h]=mode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
-    const avatarW=78, avatarH=78;
+    const avatarW=78,avatarH=78;
     const ax=mode==='catalog'?CATALOG_SIZE[0]-9-avatarW/2:PANEL_SIZE[0]-9-avatarW/2;
     const ay=mode==='catalog'?CATALOG_SIZE[1]-7-avatarH/2:PANEL_SIZE[1]-7-avatarH/2;
-    let x=Math.round(c.x-ax), y=Math.round(c.y-ay);
-    const area=screen.getDisplayNearestPoint({x:Math.round(c.x),y:Math.round(c.y)}).workArea;
+    let x=Math.round(p.x+AVATAR_SIZE[0]/2-ax);
+    let y=Math.round(p.y+AVATAR_SIZE[1]/2-ay);
+    const area=getAvatarAreaAt(p.x,p.y);
     x=Math.max(area.x+4,Math.min(x,area.x+area.width-w-4));
     y=Math.max(area.y+4,Math.min(y,area.y+area.height-h-4));
     assistantWindow.setSize(w,h,false);
@@ -255,62 +264,59 @@ function resizeForState(open,mode='home',centerOverride=null){
   }else{
     panelMode='home';
     assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
-    const safe=clampAvatarPosition(c.x-AVATAR_SIZE[0]/2,c.y-AVATAR_SIZE[1]/2);
-    avatarAnchor={x:safe.x+AVATAR_SIZE[0]/2,y:safe.y+AVATAR_SIZE[1]/2};
+    // Volver al punto exacto guardado, sin recalcularlo a partir del menú.
+    const safe=clampAvatarPosition(p.x,p.y);
+    avatarAnchor=safe;
     assistantWindow.setPosition(safe.x,safe.y,false);
   }
 }
 function setPanelOpen(open){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  // Nunca derivamos la posición del avatar desde la ventana grande del menú.
-  // La posición persistente de Vekto es la única fuente de verdad.
-  const c=ensureAvatarAnchor();
-  panelOpen=!!open;
-  if(panelOpen){
-    resizeForState(true,'home',c);
-    assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
-  }else{
-    resizeForState(false,'home',c);
-    assistantWindow.setSkipTaskbar(true);
-    assistantWindow.showInactive();
-  }
+  const shouldOpen=!!open;
+  if(shouldOpen===panelOpen)return;
+  if(shouldOpen)stopAvatarPhysics(true);
+  panelOpen=shouldOpen;
+  resizeForState(panelOpen,'home');
+  assistantWindow.setSkipTaskbar(true);
+  if(panelOpen){assistantWindow.show();assistantWindow.focus();}
+  else assistantWindow.showInactive();
 }
 function beginAvatarDrag(x,y){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
   stopAvatarPhysics(false);
-  const c=ensureAvatarAnchor();
-  dragState={startX:Math.round(c.x-AVATAR_SIZE[0]/2),startY:Math.round(c.y-AVATAR_SIZE[1]/2),pointerX:x,pointerY:y};
+  const p=ensureAvatarPosition();
+  dragState={startX:p.x,startY:p.y,pointerX:x,pointerY:y};
   dragMoved=false;
 }
 function moveAvatarDrag(x,y){
   if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
   if(Math.abs(x-dragState.pointerX)+Math.abs(y-dragState.pointerY)>3)dragMoved=true;
 
-  if(panelOpen && dragMoved){
-    const c=ensureAvatarAnchor();
+  if(panelOpen&&dragMoved){
     setPanelOpen(false);
-    dragState.startX=Math.round(c.x-AVATAR_SIZE[0]/2);
-    dragState.startY=Math.round(c.y-AVATAR_SIZE[1]/2);
+    const p=ensureAvatarPosition();
+    dragState.startX=p.x;
+    dragState.startY=p.y;
     dragState.pointerX=x;
     dragState.pointerY=y;
   }
 
   const [w,h]=AVATAR_SIZE;
-  const area=screen.getDisplayNearestPoint({x,y}).workArea;
+  const area=getAvatarAreaAt(dragState.startX,dragState.startY);
   let nx=dragState.startX+x-dragState.pointerX;
   let ny=dragState.startY+y-dragState.pointerY;
   nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
   ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
-  assistantWindow.setPosition(Math.round(nx),Math.round(ny),false);
-  avatarAnchor={x:Math.round(nx)+w/2,y:Math.round(ny)+h/2};
+  avatarAnchor={x:Math.round(nx),y:Math.round(ny)};
+  assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
 }
 function endAvatarDrag(vx=0,vy=0){
   if(!dragState)return;
   dragState=null;
-  if(Math.hypot(vx||0,vy||0)>=180 && dragMoved){
+  if(Math.hypot(vx||0,vy||0)>=180&&dragMoved){
     startAvatarPhysics(vx||0,vy||0);
   }else{
-    saveAvatarCenter(avatarCenter());
+    saveAvatarPosition(avatarTopLeft());
   }
 }
 
@@ -343,14 +349,14 @@ function openDesign(slug){
 }
 function openCatalog(){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const c=avatarCenter();panelOpen=true;panelMode='catalog';
+  const p=ensureAvatarPosition();panelOpen=true;panelMode='catalog';
   assistantWindow.setSize(CATALOG_SIZE[0],CATALOG_SIZE[1],false);
-  const area=screen.getDisplayNearestPoint({x:Math.round(c.x),y:Math.round(c.y)}).workArea;
+  const area=getAvatarAreaAt(p.x,p.y);
   const avatarW=78, avatarH=78;
   const avatarCenterOffsetX=CATALOG_SIZE[0]-9-avatarW/2;
   const avatarCenterOffsetY=CATALOG_SIZE[1]-7-avatarH/2;
-  const x=Math.max(area.x+4,Math.min(Math.round(c.x-avatarCenterOffsetX),area.x+area.width-CATALOG_SIZE[0]-4));
-  const y=Math.max(area.y+4,Math.min(Math.round(c.y-avatarCenterOffsetY),area.y+area.height-CATALOG_SIZE[1]-4));
+  const x=Math.max(area.x+4,Math.min(Math.round(p.x+AVATAR_SIZE[0]/2-avatarCenterOffsetX),area.x+area.width-CATALOG_SIZE[0]-4));
+  const y=Math.max(area.y+4,Math.min(Math.round(p.y+AVATAR_SIZE[1]/2-avatarCenterOffsetY),area.y+area.height-CATALOG_SIZE[1]-4));
   assistantWindow.setPosition(x,y,false);
   assistantWindow.webContents.send('catalog-mode');
   assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
@@ -384,8 +390,8 @@ function createAssistant(){
   assistantWindow.setSkipTaskbar(true);
   assistantWindow.loadFile(path.join(__dirname,'assistant.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{
-    avatarAnchor=loadSavedAvatarCenter();
-    resizeForState(false, 'home', avatarAnchor);
+    avatarAnchor=loadSavedAvatarPosition();
+    resizeForState(false, 'home');
     assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
     assistantWindow.webContents.send('update-state',updateState);
@@ -441,10 +447,12 @@ app.whenReady().then(()=>{
 
   contentUpdater.ensureSeeded().then(()=>{sendGenerators();sendDesigns();syncContent();});
   screen.on('display-metrics-changed',()=>{
-    if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
-    const c=setAvatarAnchor(ensureAvatarAnchor(),true);
-    resizeForState(false,'home',c);
-    saveAvatarCenter(c);
+    if(!assistantWindow||assistantWindow.isDestroyed())return;
+    if(panelOpen)return;
+    const p=ensureAvatarPosition();
+    avatarAnchor=clampAvatarPosition(p.x,p.y);
+    assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
+    saveAvatarPosition(avatarAnchor);
   });
   setTimeout(()=>{checkForUpdates();syncContent();},7000);
   setInterval(checkForUpdates,UPDATE_CHECK_MINUTES*60*1000);
