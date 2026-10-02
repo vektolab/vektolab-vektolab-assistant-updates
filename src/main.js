@@ -1,438 +1,386 @@
-const { app, BrowserWindow, ipcMain, screen, shell, globalShortcut } = require('electron');
-const path = require('path');
+const { app, BrowserWindow, ipcMain, screen, shell, Menu } = require('electron');
 const { pathToFileURL } = require('url');
+const path = require('path');
 const fs = require('fs');
-const { ContentUpdater } = require('./content-updater');
 const { autoUpdater } = require('electron-updater');
+const { ContentUpdater } = require('./content-updater');
 
-const gotSingleInstanceLock = app.requestSingleInstanceLock();
-if (!gotSingleInstanceLock) app.quit();
+const APP_VERSION = require('../package.json').version;
+const AVATAR_SIZE = 92;
+const PANEL_SIZE = { width: 455, height: 680 };
+const CATALOG_SIZE = { width: 720, height: 790 };
+const GENERATOR_SIZE = { width: 1120, height: 800 };
+const SITE_URL = 'https://vektolab.pages.dev/';
 
-let assistantWindow = null;
+let avatarWindow = null;
 let panelWindow = null;
 let generatorWindow = null;
-let updateState = { status:'idle', version:null, percent:0, error:null };
-let updateCheckRunning = false;
-let contentUpdater = null;
-let contentCheckRunning = false;
-let panelOpen = false;
-let avatarAnchor = null;
 let panelMode = 'home';
-let dragState = null;
-let currentGenerator = null;
-let dragMoved = false;
+let avatarDragging = false;
+let dragOffset = { x: 0, y: 0 };
+let avatarPosition = null;
+let contentUpdater = null;
+let updateState = { status: 'idle' };
 
-const AVATAR_SIZE = [90,90];
-const AVATAR_VISUAL_SIZE = [78,78];
-const PANEL_SIZE = [455,680];
-// La imagen ocupa 78x78 dentro de una ventana transparente de 90x90 (inset 8px).
-const AVATAR_CLOSED_OFFSET = { x: 8, y: 8 };
-const CATALOG_SIZE = [620,780];
-const POSITION_FILE = 'window-position.json';
-const CONTENT_CHECK_MINUTES = 30;
-const UPDATE_CHECK_MINUTES = 30;
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.quit();
 
-autoUpdater.autoDownload = false;
-autoUpdater.autoInstallOnAppQuit = true;
-autoUpdater.on('checking-for-update',()=>setUpdateState({status:'checking',error:null}));
-autoUpdater.on('update-available',info=>{
-  setUpdateState({status:'available',version:info.version,percent:0,error:null});
-  downloadUpdate();
-});
-autoUpdater.on('update-not-available',()=>setUpdateState({status:'up-to-date',version:app.getVersion(),percent:0,error:null}));
-autoUpdater.on('download-progress',p=>setUpdateState({status:'downloading',percent:Math.round(p.percent),error:null}));
-autoUpdater.on('update-downloaded',info=>setUpdateState({status:'downloaded',version:info.version,percent:100,error:null}));
-autoUpdater.on('error',err=>{
-  console.warn('[Vektolab] update:',err.message);
-  setUpdateState({status:'error',error:err.message,percent:0});
-});
-
-function setUpdateState(next){
-  updateState={...updateState,...next};
-  if(panelWindow&&!panelWindow.isDestroyed()) panelWindow.webContents.send('update-state',updateState);
-}
-async function checkForUpdates(){
-  if(!app.isPackaged){setUpdateState({status:'development',version:app.getVersion(),error:null});return;}
-  if(updateCheckRunning||updateState.status==='downloading'||updateState.status==='downloaded')return;
-  updateCheckRunning=true;
-  try{await autoUpdater.checkForUpdates();}catch(error){setUpdateState({status:'error',error:error.message});}
-  finally{updateCheckRunning=false;}
-}
-async function downloadUpdate(){
-  if(!app.isPackaged||updateState.status==='downloading'||updateState.status==='downloaded')return;
-  try{setUpdateState({status:'downloading',percent:0,error:null});await autoUpdater.downloadUpdate();}
-  catch(error){setUpdateState({status:'error',error:error.message,percent:0});}
-}
-function installUpdate(){if(app.isPackaged)autoUpdater.quitAndInstall(false,true);}
-
-const fallbackGenerators=[
-  ['cartel-luna','Cartel Luna','imagenes/cartel-luna.webp','generadores/cartel-luna.html'],
-  ['cortador-galletas','Cortador de galletas','imagenes/cortador-galletas.webp','generadores/cortador-galletas.html'],
-  ['cuenco-figuras','Cuenco con figuras','imagenes/Figuras-huecas.png','generadores/cuenco-figuras.html'],
-  ['identificador-lapiz','Identificador de lápiz','imagenes/identificador-lapiz.webp','generadores/identificador-lapiz.html'],
-  ['letras-huecas','Letras huecas','imagenes/letras-huecas.webp','generadores/letras-huecas.html'],
-  ['llavero','Llavero','imagenes/llavero.webp','generadores/llavero.html'],
-  ['placa-nombre-3d','Placa de nombre 3D','imagenes/placa-nombre-3d.webp','generadores/placa-nombre-3d.html'],
-  ['silueta-2d','Silueta 2D','imagenes/silueta-2d.webp','generadores/silueta-2d.html']
-];
-
-function getContentRoot(){return contentUpdater?contentUpdater.localRoot():path.join(app.getPath('userData'),'content');}
-function prettifySlug(slug){return slug.replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());}
-function loadGenerators(){
-  const root=getContentRoot();
-  try{
-    const data=JSON.parse(fs.readFileSync(path.join(root,'generators.json'),'utf8'));
-    if(Array.isArray(data.generators)&&data.generators.length)return data.generators;
-  }catch(_){}
-  const dir=path.join(root,'generadores');
-  if(!fs.existsSync(dir))return fallbackGenerators.map(([slug,name,image,file])=>({slug,name,image,file}));
-  return fs.readdirSync(dir).filter(n=>n.toLowerCase().endsWith('.html')).map(fileName=>{
-    const slug=path.basename(fileName,'.html');
-    let name=prettifySlug(slug);
-    try{
-      const html=fs.readFileSync(path.join(dir,fileName),'utf8');
-      const m=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-      if(m)name=m[1].replace(/\s*[·|]\s*Vektolab.*$/i,'').replace(/\s*·\s*Generador 3D.*$/i,'').trim()||name;
-    }catch(_){}
-    const candidates=['webp','png','jpg','jpeg'].map(ext=>path.join(root,'imagenes',`${slug}.${ext}`));
-    const image=candidates.find(p=>fs.existsSync(p));
-    return {slug,name,file:`generadores/${fileName}`,image:image?`imagenes/${path.basename(image)}`:null};
-  });
-}
-function sendGenerators(){
-  if(!panelWindow||panelWindow.isDestroyed())return;
-  const root=getContentRoot();
-  panelWindow.webContents.send('generators',loadGenerators().map(g=>({
-    slug:g.slug,name:g.name,file:g.file,
-    image:g.image?pathToFileURL(path.join(root,g.image)).href:null
-  })));
-}
-function loadDesigns(){
-  try{
-    const data=JSON.parse(fs.readFileSync(path.join(getContentRoot(),'disenos.json'),'utf8'));
-    return Array.isArray(data.designs)?data.designs:[];
-  }catch(_){return [];}
-}
-function sendDesigns(){
-  if(!panelWindow||panelWindow.isDestroyed())return;
-  const root=getContentRoot();
-  panelWindow.webContents.send('designs',loadDesigns().map(d=>({
-    slug:d.slug,name:d.name,file:d.file||null,url:d.url||null,
-    image:d.image?pathToFileURL(path.join(root,d.image)).href:null
-  })));
+function positionFile() {
+  return path.join(app.getPath('userData'), 'avatar-position.json');
 }
 
-function getPositionFile(){return path.join(app.getPath('userData'),POSITION_FILE);}
+function saveAvatarPosition() {
+  if (!avatarPosition) return;
+  try {
+    fs.mkdirSync(path.dirname(positionFile()), { recursive: true });
+    fs.writeFileSync(positionFile(), JSON.stringify(avatarPosition));
+  } catch (_) {}
+}
 
-// avatarAnchor es SIEMPRE la esquina superior izquierda del avatar visible
-// (78x78), no la esquina de la ventana Electron (90x90). El menú puede
-// cambiar el tamaño y origen de la ventana, pero jamás cambia avatarAnchor.
-function getAvatarAreaAt(x,y){
-  const [w,h]=AVATAR_VISUAL_SIZE;
-  return screen.getDisplayNearestPoint({x:Math.round(x+w/2),y:Math.round(y+h/2)}).workArea;
+function readAvatarPosition() {
+  try {
+    const value = JSON.parse(fs.readFileSync(positionFile(), 'utf8'));
+    if (Number.isFinite(value.x) && Number.isFinite(value.y)) return value;
+  } catch (_) {}
+  return null;
 }
-function clampAvatarPosition(x,y,area=null){
-  const [w,h]=AVATAR_VISUAL_SIZE;
-  const a=area||getAvatarAreaAt(x,y);
-  return {
-    x:Math.max(a.x,Math.min(Math.round(x),a.x+a.width-w)),
-    y:Math.max(a.y,Math.min(Math.round(y),a.y+a.height-h))
-  };
-}
-function avatarWindowPosition(x,y){
-  return {
-    x:Math.round(x-AVATAR_CLOSED_OFFSET.x),
-    y:Math.round(y-AVATAR_CLOSED_OFFSET.y)
-  };
-}
-function loadSavedAvatarPosition(){
-  const [w,h]=AVATAR_VISUAL_SIZE;
-  try{
-    const d=JSON.parse(fs.readFileSync(getPositionFile(),'utf8'));
-    if(Number.isFinite(d.x)&&Number.isFinite(d.y)){
-      // v2 guarda la esquina superior izquierda del avatar visible.
-      // Las versiones anteriores guardaban el centro; las migramos una sola vez.
-      const rawX=d.version===2?d.x:d.x-w/2;
-      const rawY=d.version===2?d.y:d.y-h/2;
-      return clampAvatarPosition(rawX,rawY);
+
+function workAreaForPoint(x, y) {
+  const displays = screen.getAllDisplays();
+  let best = displays[0];
+  let bestDistance = Infinity;
+  for (const display of displays) {
+    const a = display.workArea;
+    if (x >= a.x && x <= a.x + a.width && y >= a.y && y <= a.y + a.height) return a;
+    const cx = a.x + a.width / 2;
+    const cy = a.y + a.height / 2;
+    const d = (cx - x) ** 2 + (cy - y) ** 2;
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = display;
     }
-  }catch(_){ }
-  const a=screen.getPrimaryDisplay().workArea;
-  return {x:Math.round(a.x+a.width-w-8),y:Math.round(a.y+a.height-h-8)};
-}
-function ensureAvatarPosition(){
-  if(!avatarAnchor){
-    avatarAnchor=loadSavedAvatarPosition();
   }
-  avatarAnchor=clampAvatarPosition(avatarAnchor.x,avatarAnchor.y);
-  return avatarAnchor;
+  return best.workArea;
 }
-function setAvatarPosition(x,y,clamp=true){
-  const p=clamp?clampAvatarPosition(x,y):{x:Math.round(x),y:Math.round(y)};
-  avatarAnchor={x:p.x,y:p.y};
-  if(assistantWindow&&!assistantWindow.isDestroyed()){
-    const wp=avatarWindowPosition(p.x,p.y);
-    assistantWindow.setPosition(wp.x,wp.y,false);
-  }
-  return avatarAnchor;
-}
-function saveAvatarPosition(p){
-  const safe=clampAvatarPosition(p.x,p.y);
-  avatarAnchor=safe;
-  try{
-    fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});
-    // Guardamos una coordenada canónica del avatar visible.
-    fs.writeFileSync(getPositionFile(),JSON.stringify({version:2,x:Math.round(safe.x),y:Math.round(safe.y)}));
-  }catch(_){ }
-}
-function avatarTopLeft(){return ensureAvatarPosition();}
 
-function positionPanelWindow(){
-  if(!panelWindow||panelWindow.isDestroyed())return;
-  const p=ensureAvatarPosition();
-  const [pw,ph]=panelMode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
-  const area=getAvatarAreaAt(p.x,p.y);
-  // El menú se ancla al avatar, pero nunca mueve al avatar.
-  let x=Math.round(p.x + AVATAR_VISUAL_SIZE[0] - pw);
-  let y=Math.round(p.y + AVATAR_VISUAL_SIZE[1] - ph);
-  x=Math.max(area.x,Math.min(x,area.x+area.width-pw));
-  y=Math.max(area.y,Math.min(y,area.y+area.height-ph));
-  panelWindow.setSize(pw,ph,false);
-  panelWindow.setPosition(x,y,false);
+function clampAvatar(x, y) {
+  const area = workAreaForPoint(x + AVATAR_SIZE / 2, y + AVATAR_SIZE / 2);
+  return {
+    x: Math.round(Math.max(area.x, Math.min(x, area.x + area.width - AVATAR_SIZE))),
+    y: Math.round(Math.max(area.y, Math.min(y, area.y + area.height - AVATAR_SIZE)))
+  };
 }
-function createPanelWindow(mode='home'){
-  if(panelWindow&&!panelWindow.isDestroyed()){
-    panelMode=mode;
-    positionPanelWindow();
-    panelWindow.show();
-    panelWindow.focus();
-    return panelWindow;
+
+function defaultAvatarPosition() {
+  const area = screen.getPrimaryDisplay().workArea;
+  return clampAvatar(area.x + area.width - AVATAR_SIZE - 18, area.y + area.height - AVATAR_SIZE - 18);
+}
+
+function ensureAvatarPosition() {
+  if (!avatarPosition) avatarPosition = clampAvatar(
+    readAvatarPosition()?.x ?? defaultAvatarPosition().x,
+    readAvatarPosition()?.y ?? defaultAvatarPosition().y
+  );
+  return avatarPosition;
+}
+
+function moveAvatar(x, y, { persist = true } = {}) {
+  const next = clampAvatar(x, y);
+  avatarPosition = next;
+  if (avatarWindow && !avatarWindow.isDestroyed()) avatarWindow.setPosition(next.x, next.y, false);
+  if (persist) saveAvatarPosition();
+  if (panelWindow && !panelWindow.isDestroyed() && panelWindow.isVisible()) positionPanel();
+}
+
+function positionPanel() {
+  if (!panelWindow || panelWindow.isDestroyed()) return;
+  const p = ensureAvatarPosition();
+  const size = panelMode === 'catalog' ? CATALOG_SIZE : PANEL_SIZE;
+  const area = workAreaForPoint(p.x + AVATAR_SIZE / 2, p.y + AVATAR_SIZE / 2);
+
+  // El panel termina exactamente en la zona del avatar. El avatar está en su propia ventana,
+  // por encima del panel, por lo que nunca es movido ni redimensionado al abrir el menú.
+  let x = p.x + AVATAR_SIZE - size.width;
+  let y = p.y + AVATAR_SIZE - size.height;
+
+  x = Math.max(area.x + 8, Math.min(x, area.x + area.width - size.width - 8));
+  y = Math.max(area.y + 8, Math.min(y, area.y + area.height - size.height - 8));
+
+  panelWindow.setSize(size.width, size.height, false);
+  panelWindow.setPosition(Math.round(x), Math.round(y), false);
+}
+
+function sendPanel(channel, data) {
+  if (panelWindow && !panelWindow.isDestroyed()) panelWindow.webContents.send(channel, data);
+}
+
+function readJson(name, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(contentUpdater.localRoot(), name), 'utf8'));
+  } catch (_) {
+    return fallback;
   }
-  panelMode=mode;
-  panelWindow=new BrowserWindow({
-    width:mode==='catalog'?CATALOG_SIZE[0]:PANEL_SIZE[0],
-    height:mode==='catalog'?CATALOG_SIZE[1]:PANEL_SIZE[1],
-    frame:false,transparent:true,resizable:false,movable:false,
-    alwaysOnTop:true,skipTaskbar:true,show:false,hasShadow:false,
-    backgroundColor:'#00000000',
-    webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
+}
+
+function getGenerators() {
+  const data = readJson('generators.json', { generators: [] });
+  return Array.isArray(data.generators) ? data.generators : [];
+}
+
+function getDesigns() {
+  const data = readJson('disenos.json', { designs: [] });
+  return Array.isArray(data.designs) ? data.designs : [];
+}
+
+function fileUrl(rel) {
+  const absolute = path.join(contentUpdater.localRoot(), rel);
+  return pathToFileURL(absolute).toString();
+}
+
+function createAvatar() {
+  if (avatarWindow && !avatarWindow.isDestroyed()) return avatarWindow;
+  ensureAvatarPosition();
+  avatarWindow = new BrowserWindow({
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    x: avatarPosition.x,
+    y: avatarPosition.y,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: true,
+    hasShadow: false,
+    show: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false
+    }
   });
-  panelWindow.setAlwaysOnTop(true,'floating');
+
+  avatarWindow.setAlwaysOnTop(true, 'floating');
+  avatarWindow.setSkipTaskbar(true);
+  avatarWindow.loadFile(path.join(__dirname, 'avatar.html'));
+  avatarWindow.once('ready-to-show', () => avatarWindow.showInactive());
+  avatarWindow.on('closed', () => { avatarWindow = null; });
+  return avatarWindow;
+}
+
+function createPanel() {
+  if (panelWindow && !panelWindow.isDestroyed()) return panelWindow;
+  panelWindow = new BrowserWindow({
+    ...PANEL_SIZE,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    show: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    focusable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false
+    }
+  });
+  panelWindow.setAlwaysOnTop(true, 'floating');
   panelWindow.setSkipTaskbar(true);
-  panelWindow.on('closed',()=>{panelWindow=null;panelOpen=false;panelMode='home';});
+  panelWindow.loadFile(path.join(__dirname, 'assistant.html'));
+  panelWindow.on('blur', () => {
+    if (!panelWindow || panelWindow.isDestroyed() || !panelWindow.isVisible()) return;
+    // Si el cursor está sobre Vekto, no cierres el panel antes de que el clic del avatar
+    // llegue a su propio proceso. El clic del avatar se encarga de alternarlo.
+    if (avatarWindow && !avatarWindow.isDestroyed()) {
+      const cursor = screen.getCursorScreenPoint();
+      const [ax, ay] = avatarWindow.getPosition();
+      if (cursor.x >= ax && cursor.x <= ax + AVATAR_SIZE && cursor.y >= ay && cursor.y <= ay + AVATAR_SIZE) return;
+    }
+    hidePanel();
+  });
+  panelWindow.on('closed', () => { panelWindow = null; });
   return panelWindow;
 }
-function setPanelOpen(open){
-  const shouldOpen=!!open;
-  if(shouldOpen){
-    ensureAvatarPosition();
-    panelOpen=true;
-    if(!panelWindow||panelWindow.isDestroyed()){
-      const w=createPanelWindow('home');
-      w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
-        if(!w||w.isDestroyed())return;
-        w.webContents.send('update-state',updateState);
-        w.webContents.send('app-version',app.getVersion());
-        sendGenerators();sendDesigns();
-        if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
-        positionPanelWindow();
-        w.show();
-        assistantWindow.setAlwaysOnTop(true,'floating');
-        assistantWindow.moveTop();
-      });
-    }else{
-      panelMode='home';
-      positionPanelWindow();
-      panelWindow.show();
-      assistantWindow.setAlwaysOnTop(true,'floating');
-      assistantWindow.moveTop();
-    }
-    return;
-  }
-  panelOpen=false;
-  if(panelWindow&&!panelWindow.isDestroyed()){
-    panelWindow.hide();
-  }
-}
-function beginAvatarDrag(x,y){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const p=ensureAvatarPosition();
-  dragState={startX:p.x,startY:p.y,pointerX:x,pointerY:y};
-  dragMoved=false;
-}
-function moveAvatarDrag(x,y){
-  if(!dragState||!assistantWindow||assistantWindow.isDestroyed())return;
-  if(Math.abs(x-dragState.pointerX)+Math.abs(y-dragState.pointerY)>3)dragMoved=true;
 
-  if(panelOpen&&dragMoved){
-    setPanelOpen(false);
-    const p=ensureAvatarPosition();
-    dragState.startX=p.x;
-    dragState.startY=p.y;
-    dragState.pointerX=x;
-    dragState.pointerY=y;
-  }
-
-  const [w,h]=AVATAR_VISUAL_SIZE;
-  const area=getAvatarAreaAt(dragState.startX,dragState.startY);
-  let nx=dragState.startX+x-dragState.pointerX;
-  let ny=dragState.startY+y-dragState.pointerY;
-  nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
-  ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
-  avatarAnchor={x:Math.round(nx),y:Math.round(ny)};
-  {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
-  if(panelOpen)positionPanelWindow();
-}
-function endAvatarDrag(){
-  if(!dragState)return;
-  dragState=null;
-  saveAvatarPosition(avatarTopLeft());
+function showPanel(mode = 'home') {
+  panelMode = mode;
+  const p = createPanel();
+  positionPanel();
+  p.webContents.once('did-finish-load', () => {
+    sendPanel('panel-mode', panelMode);
+    sendPanel('generators', getGenerators());
+    sendPanel('designs', getDesigns());
+    sendPanel('update-state', updateState);
+    sendPanel('content-state', contentUpdater.getState());
+  });
+  sendPanel('panel-mode', panelMode);
+  sendPanel('generators', getGenerators());
+  sendPanel('designs', getDesigns());
+  sendPanel('update-state', updateState);
+  sendPanel('content-state', contentUpdater.getState());
+  p.show();
+  p.focus();
+  positionPanel();
 }
 
-function openGenerator(slug){
-  const g=loadGenerators().find(x=>x.slug===slug);if(!g)return;
-  const file=path.join(getContentRoot(),g.file);if(!fs.existsSync(file))return;
-  setPanelOpen(false);
-  currentGenerator=g;
-  if(generatorWindow&&!generatorWindow.isDestroyed()){
-    generatorWindow.loadFile(path.join(__dirname,'generator-view.html')).then(()=>{
-      generatorWindow.webContents.send('generator-view',{title:g.name,url:pathToFileURL(file).href});
-      generatorWindow.show();generatorWindow.focus();
+function hidePanel() {
+  if (panelWindow && !panelWindow.isDestroyed()) panelWindow.hide();
+}
+
+function togglePanel() {
+  if (panelWindow && !panelWindow.isDestroyed() && panelWindow.isVisible()) hidePanel();
+  else showPanel('home');
+}
+
+function openGenerator(slug) {
+  const item = getGenerators().find(g => g.slug === slug);
+  if (!item) return;
+  hidePanel();
+  if (!generatorWindow || generatorWindow.isDestroyed()) {
+    generatorWindow = new BrowserWindow({
+      ...GENERATOR_SIZE,
+      minWidth: 900,
+      minHeight: 650,
+      frame: true,
+      title: 'Vektolab · ' + item.name,
+      backgroundColor: '#f6f7f9',
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
     });
+    generatorWindow.loadFile(path.join(__dirname, 'generator-view.html'));
+    generatorWindow.on('closed', () => { generatorWindow = null; });
+    generatorWindow.webContents.once('did-finish-load', () => {
+      generatorWindow.webContents.send('generator-view', {
+        title: item.name,
+        url: fileUrl(item.file)
+      });
+    });
+  } else {
+    generatorWindow.show();
+    generatorWindow.focus();
+    generatorWindow.webContents.send('generator-view', {
+      title: item.name,
+      url: fileUrl(item.file)
+    });
+  }
+}
+
+function openDesign(slug) {
+  const item = getDesigns().find(d => d.slug === slug);
+  if (!item) return;
+  shell.openExternal(item.url || SITE_URL);
+}
+
+function setupIpc() {
+  ipcMain.on('toggle-panel', togglePanel);
+  ipcMain.on('close-panel', hidePanel);
+  ipcMain.on('open-catalog', () => showPanel('catalog'));
+  ipcMain.on('close-catalog', hidePanel);
+  ipcMain.on('open-generator', (_e, slug) => openGenerator(slug));
+  ipcMain.on('open-design', (_e, slug) => openDesign(slug));
+  ipcMain.on('open-site', () => shell.openExternal(SITE_URL));
+  ipcMain.on('quit-app', () => app.quit());
+  ipcMain.on('get-app-version', e => e.sender.send('app-version', APP_VERSION));
+  ipcMain.on('get-generators', e => e.sender.send('generators', getGenerators()));
+  ipcMain.on('get-designs', e => e.sender.send('designs', getDesigns()));
+  ipcMain.on('get-content-state', e => e.sender.send('content-state', contentUpdater.getState()));
+  ipcMain.on('get-update-state', e => e.sender.send('update-state', updateState));
+  ipcMain.on('check-updates', () => checkForAppUpdate());
+  ipcMain.on('sync-content', async () => {
+    await contentUpdater.sync();
+    sendPanel('generators', getGenerators());
+    sendPanel('designs', getDesigns());
+  });
+  ipcMain.on('install-update', () => autoUpdater.quitAndInstall());
+
+  ipcMain.on('avatar-drag-start', (event, point) => {
+    if (!avatarWindow || avatarWindow.isDestroyed()) return;
+    hidePanel();
+    const [wx, wy] = avatarWindow.getPosition();
+    const px = Number(point?.x);
+    const py = Number(point?.y);
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return;
+    dragOffset = { x: px - wx, y: py - wy };
+    avatarDragging = true;
+    avatarWindow.webContents.send('avatar-dragging', true);
+  });
+
+  ipcMain.on('avatar-drag-move', (_event, point) => {
+    if (!avatarDragging || !avatarWindow || avatarWindow.isDestroyed()) return;
+    const x = Number(point?.x) - dragOffset.x;
+    const y = Number(point?.y) - dragOffset.y;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    moveAvatar(x, y, { persist: false });
+  });
+
+  ipcMain.on('avatar-drag-end', () => {
+    if (!avatarDragging) return;
+    avatarDragging = false;
+    saveAvatarPosition();
+    if (avatarWindow && !avatarWindow.isDestroyed()) avatarWindow.webContents.send('avatar-dragging', false);
+  });
+}
+
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = false;
+  autoUpdater.on('checking-for-update', () => setUpdateState({ status: 'checking' }));
+  autoUpdater.on('update-available', info => setUpdateState({ status: 'available', version: info.version }));
+  autoUpdater.on('update-not-available', () => setUpdateState({ status: 'up-to-date' }));
+  autoUpdater.on('download-progress', p => setUpdateState({ status: 'downloading', percent: Math.round(p.percent) }));
+  autoUpdater.on('update-downloaded', () => setUpdateState({ status: 'ready', percent: 100 }));
+  autoUpdater.on('error', err => setUpdateState({ status: 'error', error: err.message }));
+}
+
+function setUpdateState(next) {
+  updateState = { ...updateState, ...next };
+  sendPanel('update-state', updateState);
+}
+
+async function checkForAppUpdate() {
+  if (!app.isPackaged) {
+    setUpdateState({ status: 'dev' });
     return;
   }
-  generatorWindow=new BrowserWindow({
-    width:760,height:800,show:false,backgroundColor:'#f7f8fa',
-    webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
-  });
-  generatorWindow.loadFile(path.join(__dirname,'generator-view.html')).then(()=>{
-    generatorWindow.webContents.send('generator-view',{title:g.name,url:pathToFileURL(file).href});
-    generatorWindow.show();generatorWindow.focus();
-  });
-  generatorWindow.on('closed',()=>generatorWindow=null);
-}
-function openDesign(slug){
-  const d=loadDesigns().find(x=>x.slug===slug);if(!d)return;
-  if(d.url){shell.openExternal(d.url);return;}
-  if(d.file)openGenerator(d.slug);
-}
-function openCatalog(){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
-  ensureAvatarPosition();
-  panelOpen=true;
-  panelMode='catalog';
-  const w=createPanelWindow('catalog');
-  const showCatalog=()=>{
-    if(!w||w.isDestroyed())return;
-    positionPanelWindow();
-    w.webContents.send('catalog-mode');
-    w.show();
-    assistantWindow.setAlwaysOnTop(true,'floating');
-    assistantWindow.moveTop();
-  };
-  if(w.webContents.getURL()) showCatalog();
-  else w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
-    if(w.isDestroyed())return;
-    w.webContents.send('update-state',updateState);
-    w.webContents.send('app-version',app.getVersion());
-    sendGenerators();sendDesigns();
-    if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
-    showCatalog();
-  });
-}
-function closeCatalog(){setPanelOpen(false);}
-function closeGeneratorView(){currentGenerator=null;if(generatorWindow&&!generatorWindow.isDestroyed())generatorWindow.close();setPanelOpen(false);}
-
-async function syncContent(){
-  if(!contentUpdater||contentCheckRunning)return;
-  contentCheckRunning=true;
-  try{
-    await contentUpdater.sync();
-    sendGenerators();sendDesigns();
-    if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.webContents.send('content-state',contentUpdater.getState());
-  }finally{contentCheckRunning=false;}
+  try { await autoUpdater.checkForUpdates(); } catch (error) { setUpdateState({ status: 'error', error: error.message }); }
 }
 
-function configureStartup(){
-  if(!app.isPackaged)return;
-  if(process.platform==='win32'||process.platform==='darwin')app.setLoginItemSettings({openAtLogin:true,openAsHidden:true});
-}
-function createAssistant(){
-  assistantWindow=new BrowserWindow({
-    width:AVATAR_SIZE[0],height:AVATAR_SIZE[1],frame:false,transparent:true,resizable:false,movable:false,
-    alwaysOnTop:true,skipTaskbar:true,show:false,hasShadow:false,backgroundColor:'#00000000',
-    webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
-  });
-  assistantWindow.setAlwaysOnTop(true,'floating');
-  assistantWindow.setIgnoreMouseEvents(false);
-  assistantWindow.setFocusable(true);
-  assistantWindow.setSkipTaskbar(true);
-  assistantWindow.loadFile(path.join(__dirname,'avatar.html'));
-  assistantWindow.webContents.on('did-finish-load',()=>{
-    avatarAnchor=loadSavedAvatarPosition();
-    setAvatarPosition(avatarAnchor.x,avatarAnchor.y,true);
-    assistantWindow.setSkipTaskbar(true);
-    assistantWindow.showInactive();
-  });
-  assistantWindow.on('closed',()=>assistantWindow=null);
-}
-
-if(gotSingleInstanceLock){
-  app.on('second-instance',()=>{
-    if(assistantWindow&&!assistantWindow.isDestroyed()){assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();}
-  });
-}
-
-app.whenReady().then(()=>{
-  app.setAppUserModelId('com.vektolab.assistant');
-  ipcMain.on('open-generator',(_e,slug)=>openGenerator(slug));
-  ipcMain.on('open-design',(_e,slug)=>openDesign(slug));
-  ipcMain.on('open-catalog',()=>openCatalog());
-  ipcMain.on('close-catalog',()=>closeCatalog());
-  ipcMain.on('close-generator-view',()=>closeGeneratorView());
-  ipcMain.on('open-site',()=>shell.openExternal('https://vektolab.com'));
-  ipcMain.on('toggle-panel',()=>setPanelOpen(!panelOpen));
-  ipcMain.on('close-panel',()=>setPanelOpen(false));
-  ipcMain.on('set-panel-open',(_e,open)=>setPanelOpen(!!open));
-  ipcMain.on('avatar-drag-start',(_e,d)=>beginAvatarDrag(d?.x||0,d?.y||0));
-  ipcMain.on('avatar-drag-move',(_e,d)=>moveAvatarDrag(d?.x||0,d?.y||0));
-  ipcMain.on('avatar-drag-end',()=>endAvatarDrag());
-  ipcMain.on('quit-app',()=>app.quit());
-  ipcMain.on('check-updates',()=>checkForUpdates());
-  ipcMain.on('download-update',()=>downloadUpdate());
-  ipcMain.on('install-update',()=>installUpdate());
-  ipcMain.on('get-update-state',e=>e.sender.send('update-state',updateState));
-  ipcMain.on('get-app-version',e=>e.sender.send('app-version',app.getVersion()));
-  ipcMain.on('get-generators',()=>sendGenerators());
-  ipcMain.on('get-designs',()=>sendDesigns());
-  ipcMain.on('sync-content',()=>syncContent());
-  ipcMain.on('get-content-state',e=>e.sender.send('content-state',contentUpdater?.getState()||{status:'idle'}));
-
-  configureStartup();
-  contentUpdater=new ContentUpdater(app);
-  contentUpdater.onState=state=>{
-    if(panelWindow&&!panelWindow.isDestroyed())panelWindow.webContents.send('content-state',state);
-  };
-  createAssistant();
-
-  globalShortcut.unregisterAll();
-  globalShortcut.register('CommandOrControl+Shift+V',()=>{
-    if(assistantWindow&&!assistantWindow.isDestroyed())setPanelOpen(!panelOpen);
-  });
-
-  contentUpdater.ensureSeeded().then(()=>{sendGenerators();sendDesigns();syncContent();});
-  screen.on('display-metrics-changed',()=>{
-    if(!assistantWindow||assistantWindow.isDestroyed())return;
-    const p=ensureAvatarPosition();
-    avatarAnchor=clampAvatarPosition(p.x,p.y);
-    {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
-    saveAvatarPosition(avatarAnchor);
-    if(panelOpen)positionPanelWindow();
-  });
-  setTimeout(()=>{checkForUpdates();syncContent();},7000);
-  setInterval(checkForUpdates,UPDATE_CHECK_MINUTES*60*1000);
-  setInterval(syncContent,CONTENT_CHECK_MINUTES*60*1000);
+app.on('second-instance', () => {
+  if (avatarWindow && !avatarWindow.isDestroyed()) {
+    avatarWindow.showInactive();
+    avatarWindow.focus();
+  }
 });
 
-app.on('before-quit',()=>globalShortcut.unregisterAll());
-app.on('window-all-closed',e=>e.preventDefault());
+app.whenReady().then(async () => {
+  Menu.setApplicationMenu(null);
+  if (process.platform === 'win32') {
+    app.setLoginItemSettings({ openAtLogin: true });
+  }
+  contentUpdater = new ContentUpdater(app);
+  contentUpdater.onState = state => sendPanel('content-state', state);
+  await contentUpdater.ensureSeeded();
+  setupIpc();
+  setupAutoUpdater();
+  createAvatar();
+  // Actualización de contenido silenciosa; el asistente sigue funcionando aunque no haya internet.
+  contentUpdater.sync();
+  if (app.isPackaged) setTimeout(() => checkForAppUpdate(), 4000);
+
+  screen.on('display-metrics-changed', () => {
+    if (!avatarWindow || avatarWindow.isDestroyed()) return;
+    const p = ensureAvatarPosition();
+    moveAvatar(p.x, p.y, { persist: true });
+    if (panelWindow && !panelWindow.isDestroyed() && panelWindow.isVisible()) positionPanel();
+  });
+});
+
+app.on('window-all-closed', event => event.preventDefault());
+app.on('before-quit', () => saveAvatarPosition());

@@ -1,45 +1,29 @@
 {
   "name": "vektolab-assistant",
-  "version": "1.0.0",
-  "description": "Vekto - asistente de escritorio de Vektolab · Genesis",
+  "version": "2.0.0",
+  "description": "Vekto · asistente de escritorio de Vektolab",
   "main": "src/main.js",
   "author": "Vektolab",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "dist": "electron-builder --win",
-    "dist:all": "electron-builder --win --mac"
-  },
-  "dependencies": {
-    "electron-updater": "^6.6.2"
+    "dist": "electron-builder --win --publish never"
   },
   "devDependencies": {
     "electron": "^38.2.0",
     "electron-builder": "^26.0.12"
   },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
   "build": {
     "appId": "com.vektolab.assistant",
     "productName": "Vektolab Assistant",
     "asar": true,
-    "files": [
-      "src/**/*",
-      "src/assets/**/*",
-      "content/**/*",
-      "package.json"
-    ],
-    "directories": {
-      "output": "release"
-    },
+    "files": ["src/**/*", "content/**/*", "package.json"],
+    "directories": {"output": "release"},
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
+      "target": [{"target":"nsis","arch":["x64","arm64"]}],
       "artifactName": "Vektolab-Assistant-Setup-${version}-${arch}.${ext}"
     },
     "nsis": {
@@ -51,25 +35,6 @@
       "shortcutName": "Vektolab Assistant",
       "runAfterFinish": true
     },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "category": "public.app-category.utilities",
-      "artifactName": "Vektolab-Assistant-${version}-${arch}.${ext}",
-      "hardenedRuntime": true
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "vektolab",
-        "repo": "vektolab-vektolab-assistant-updates",
-        "releaseType": "release"
-      }
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vektolab/vektolab-vektolab-assistant-updates.git"
+    "publish": [{"provider":"github","owner":"vektolab","repo":"vektolab-vektolab-assistant-updates","releaseType":"release"}]
   }
 }

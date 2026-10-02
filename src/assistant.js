@@ -1,75 +1,51 @@
-const app=document.getElementById('app'), search=document.getElementById('search'), designs=document.getElementById('designs');
-const checkUpdatesButton=document.getElementById('checkUpdates'), versionLabel=document.getElementById('versionLabel');
-const toastStack=document.getElementById('toastStack'), tabGenerators=document.getElementById('tabGenerators'), tabDesigns=document.getElementById('tabDesigns');
-let items=[]; let staticDesigns=[]; let activeTab='generators'; let catalogMode=false; let toastTimers=[];
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const search = document.getElementById('search');
+const status = document.getElementById('status');
+const tabs = [...document.querySelectorAll('.tab[data-tab]')];
+let generators = [];
+let designs = [];
+let current = 'generators';
+let mode = 'home';
 
-function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function currentItems(){return activeTab==='designs'?staticDesigns:items}
-function cardMarkup(i,type){return `<button class="card" type="button" data-slug="${escapeHtml(i.slug)}" data-type="${type}"><span class="thumb">${i.image?`<img src="${i.image}" alt="${escapeHtml(i.name)}">`:''}</span><span class="name">${escapeHtml(i.name)}</span></button>`}
-function render(q=''){
- const query=q.toLowerCase().trim();
- if(catalogMode){
-   const gens=items.filter(i=>(i.name||'').toLowerCase().includes(query));
-   const des=staticDesigns.filter(i=>(i.name||'').toLowerCase().includes(query));
-   const genCards=gens.length?gens.map(i=>cardMarkup(i,'generators')).join(''):`<div class="empty">No encontramos generadores.</div>`;
-   const desCards=des.length?des.map(i=>cardMarkup(i,'designs')).join(''):`<div class="empty">Todavía no hay diseños disponibles.</div>`;
-   designs.innerHTML=`<div class="catalog-group"><div class="catalog-title">Generadores <span>${gens.length}</span></div><div class="catalog-grid">${genCards}</div></div><div class="catalog-group"><div class="catalog-title">Diseños <span>${des.length}</span></div><div class="catalog-grid">${desCards}</div></div>`;
- }else{
-   const list=currentItems().filter(i=>(i.name||'').toLowerCase().includes(query));
-   const emptyText=activeTab==='designs'?'Todavía no hay diseños disponibles.':'No encontramos ese generador.';
-   designs.innerHTML=list.length?list.map(i=>cardMarkup(i,activeTab)).join(''):`<div class="empty">${emptyText}</div>`;
- }
- designs.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>{
-   const type=c.dataset.type;
-   if(type==='generators') window.vektolab.openGenerator(c.dataset.slug);
-   else window.vektolab.openDesign(c.dataset.slug);
- }));
+function normalize(v){ return String(v||'').toLocaleLowerCase('es'); }
+function itemImage(item){
+  if (!item?.image) return '';
+  return item.image.startsWith('http') ? item.image : `../content/${item.image}`;
 }
-function selectTab(tab){activeTab=tab; tabGenerators.classList.toggle('active',tab==='generators'); tabDesigns.classList.toggle('active',tab==='designs'); search.placeholder=tab==='designs'?'Buscar diseños...':'Buscar generadores...'; render(search.value)}
-function clearToasts(){toastTimers.forEach(t=>clearTimeout(t));toastTimers=[];toastStack.innerHTML=''}
-function showToast(message,{kind='content',duration=5000,progress=null}={}){
- const el=document.createElement('div'); el.className=`toast ${kind==='update'?'update-toast':''}`; el.innerHTML=`<span>${message}</span>${progress!==null?`<div class="progress"><i style="width:${progress}%"></i></div>`:''}<button class="toast-close" type="button" aria-label="Cerrar">×</button>`;
- toastStack.appendChild(el);
- const close=()=>{el.remove(); if(timer)clearTimeout(timer)}; el.querySelector('.toast-close').addEventListener('click',close);
- const timer=setTimeout(close,duration); toastTimers.push(timer);
- return el;
+function render(){
+  const source = current === 'generators' ? generators : designs;
+  const q = normalize(search.value).trim();
+  const filtered = source.filter(item => !q || normalize([item.name,item.title,item.description,item.keywords,item.slug].join(' ')).includes(q));
+  grid.innerHTML = '';
+  empty.hidden = filtered.length !== 0;
+  filtered.forEach(item => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    const image = itemImage(item);
+    card.innerHTML = `<div class="thumb">${image ? `<img src="${image}" alt="">` : ''}</div><div class="ctitle">${item.name || item.title || 'Diseño'}</div>`;
+    card.addEventListener('click', () => current === 'generators' ? window.vektolab.openGenerator(item.slug) : window.vektolab.openDesign(item.slug));
+    grid.appendChild(card);
+  });
 }
-function showUpdate(state){
- if(state?.status==='available') showToast(`✨ Nueva versión ${state.version}. Descargando…`,{kind:'update',duration:8000});
- else if(state?.status==='downloading') { clearToasts(); showToast(`⬇ Descargando actualización ${state.percent||0}%`,{kind:'update',duration:15000,progress:state.percent||0}); }
- else if(state?.status==='downloaded') showUpdateReady(state.version);
- else if(state?.status==='error') showToast('⚠ No se pudo comprobar la actualización.',{kind:'update',duration:5000});
- // Intencionalmente no mostramos "ya tienes la última versión".
-}
-function showUpdateReady(version){
- clearToasts();
- const el=showToast(`✓ ${version} está lista.`,{kind:'update',duration:5000});
- const button=document.createElement('button'); button.textContent='Reiniciar y actualizar'; button.style.cssText='margin:7px 0 0 0;border:0;border-radius:8px;background:#111827;color:#fff;padding:6px 9px;font-size:10px;cursor:pointer';
- el.appendChild(button); button.addEventListener('click',()=>window.vektolab.installUpdate());
-}
-function showContentUpdate(state){
- if(state?.status==='checking'||state?.status==='up-to-date') return;
- if(state?.status==='downloading') {clearToasts(); showToast(`Actualizando generadores… ${state.percent||0}%`,{duration:15000,progress:state.percent||0});}
- else if(state?.status==='updated') showToast(`✓ Generadores actualizados (${state.updated||0} archivos)`,{duration:5000});
- else if(state?.status==='offline') showToast('✓ Generadores disponibles. No se pudo comprobar si hay cambios ahora.',{duration:5000});
- else if(state?.status==='error') showToast('⚠ No se pudieron cargar los generadores.',{duration:5000});
+function setTab(tab){
+  current = tab;
+  tabs.forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  search.placeholder = tab === 'generators' ? 'Buscar generadores...' : 'Buscar diseños...';
+  render();
 }
 
+document.getElementById('close').onclick = () => window.vektolab.closePanel();
+document.getElementById('all').onclick = () => window.vektolab.openCatalog();
+document.getElementById('site').onclick = () => window.vektolab.openSite();
+document.getElementById('updates').onclick = () => { status.textContent='Buscando actualizaciones...'; window.vektolab.checkUpdates(); window.vektolab.syncContent(); };
+search.addEventListener('input', render);
+tabs.forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
-window.vektolab.onGenerators(list=>{items=Array.isArray(list)?list:[]; render(search.value);});
-window.vektolab.onDesigns(list=>{staticDesigns=Array.isArray(list)?list:[]; if(activeTab==='designs') render(search.value);});
-window.vektolab.onCatalogMode(()=>{catalogMode=true; app.classList.add('catalog-mode','open'); render(search.value);});
-window.vektolab.onAssistantBlur(()=>{if(catalogMode){catalogMode=false; app.classList.remove('catalog-mode','open'); window.vektolab.closeCatalog();}else closePanel();});
-if(checkUpdatesButton){checkUpdatesButton.addEventListener('click',()=>{checkUpdatesButton.disabled=true;window.vektolab.checkUpdates();window.vektolab.syncContent();setTimeout(()=>checkUpdatesButton.disabled=false,2500);});}
-window.vektolab.onAppVersion(v=>{if(versionLabel) versionLabel.textContent='v'+v;});
-document.getElementById('close').addEventListener('click',closePanel);
-document.getElementById('explore').addEventListener('click',()=>{window.vektolab.openCatalog();});
-tabGenerators.addEventListener('click',()=>selectTab('generators')); tabDesigns.addEventListener('click',()=>selectTab('designs'));
-search.addEventListener('input',()=>render(search.value));
-document.getElementById('site').addEventListener('click',()=>window.vektolab.openSite());
-
-
-// El avatar vive en una ventana independiente; este panel solo contiene el menú.
-function closePanel(){
-  window.vektolab.setPanelOpen(false);
-}
+window.vektolab.onGenerators(list=>{generators=Array.isArray(list)?list:[]; if(current==='generators')render();});
+window.vektolab.onDesigns(list=>{designs=Array.isArray(list)?list:[]; if(current==='designs')render();});
+window.vektolab.onUpdateState(s=>{ if(!s)return; if(s.status==='available')status.textContent=`Nueva versión ${s.version} disponible`; else if(s.status==='ready')status.textContent='Actualización lista'; else if(s.status==='downloading')status.textContent=`Actualizando… ${s.percent||0}%`; else if(s.status==='up-to-date')status.textContent='Vekto está actualizado'; else if(s.status==='error')status.textContent='No se pudo comprobar ahora'; });
+window.vektolab.onContentState(s=>{ if(!s)return; if(s.status==='updated')status.textContent=`Contenido actualizado · ${s.version||''}`; else if(s.status==='offline')status.textContent='Contenido local disponible'; });
+window.vektolab.onPanelMode(m=>{mode=m||'home'; if(mode==='catalog'){document.getElementById('all').style.display='none';} else document.getElementById('all').style.display='';});
+window.vektolab.getGenerators();
+window.vektolab.getDesigns();

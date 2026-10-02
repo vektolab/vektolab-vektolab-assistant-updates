@@ -1,61 +1,24 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self';">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vekto</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:transparent;font-family:Segoe UI,Arial,sans-serif;color:#111827;overflow:hidden}
-#app{position:relative;width:100%;height:100%}
-.panel{position:absolute;left:0;top:0;width:455px;height:680px;background:rgba(255,255,255,.99);border:1px solid #e5e7eb;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.18);padding:16px;opacity:0;transform:translateY(8px) scale(.985);pointer-events:none;transition:opacity .16s ease,transform .16s ease;overflow:hidden}
-.open .panel{opacity:1;transform:none;pointer-events:auto}
-.header{display:flex;align-items:center;gap:10px;margin-bottom:13px}
-.title{font-size:18px;font-weight:800;line-height:1.1}
-.sub{font-size:11px;color:#6b7280;margin-top:3px}
-.close{margin-left:auto;width:30px;height:30px;border:0;border-radius:50%;background:#f3f4f6;color:#4b5563;font-size:20px;cursor:pointer;flex:0 0 auto}
-.search{width:100%;height:43px;border:1px solid #e2e5ea;border-radius:12px;background:#f8f9fb;padding:0 13px;outline:none;font-size:13px}
-.search:focus{border-color:#c9cdd5;box-shadow:0 0 0 3px rgba(245,197,24,.16)}
-.tabs{display:flex;gap:7px;align-items:center;margin:15px 2px 9px}
-.tab{border:0;background:transparent;color:#6b7280;font:inherit;font-size:12px;font-weight:800;padding:7px 9px;border-radius:9px;cursor:pointer}
-.tab.active{background:#f4f5f7;color:#111827}
-.all-link{margin-left:auto;color:#6b7280;font-size:11px;font-weight:650;cursor:pointer;padding:6px 5px}
-.designs{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-height:350px;overflow:auto;padding:1px 2px 4px 1px}
-.card{font:inherit;text-align:left;color:inherit;padding:0;width:100%;border:1px solid #e5e7eb;background:#fff;border-radius:13px;overflow:hidden;cursor:pointer;transition:.15s}
-.card:hover{border-color:#c8cbd1;transform:translateY(-1px);box-shadow:0 5px 15px rgba(0,0,0,.06)}
-.thumb{height:92px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.thumb img{width:100%;height:100%;object-fit:cover}
-.name{display:block;padding:8px 9px 10px;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.empty{grid-column:1/-1;text-align:center;padding:30px 10px;color:#6b7280;font-size:12px}
-.toast-stack{position:absolute;left:16px;right:16px;bottom:48px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{position:relative;min-height:36px;padding:9px 34px 9px 11px;border-radius:11px;background:#fff8d8;border:1px solid #f0df8b;box-shadow:0 8px 25px rgba(0,0,0,.08);font-size:10px;color:#374151;pointer-events:auto}
-.toast.update-toast{background:#f8f9fb;border-color:#e5e7eb}
-.toast .toast-close{position:absolute;right:7px;top:6px;width:24px;height:24px;border:0;border-radius:7px;background:transparent;color:#6b7280;font-size:16px;cursor:pointer}
-.toast .progress{height:4px;margin-top:7px;border-radius:99px;background:#e5e7eb;overflow:hidden}
-.toast .progress i{display:block;height:100%;background:#111827;border-radius:99px}
-.check{width:100%;margin-top:9px;height:34px;border:1px solid #e2e5ea;border-radius:10px;background:#f8f9fb;color:#111827;font-size:11px;font-weight:650;cursor:pointer}
-.check:disabled{opacity:.6;cursor:default}
-.footer{display:flex;justify-content:space-between;margin-top:10px;color:#6b7280;font-size:10px}
-.footer .link{cursor:pointer}.version{color:#9ca3af}
-.catalog-mode .panel{width:620px;height:780px;padding:18px;border-radius:24px}
-.catalog-mode .designs{max-height:650px;display:block}
-.catalog-group{margin-bottom:18px}.catalog-title{font-size:12px;font-weight:800;margin:4px 2px 8px}.catalog-title span{font-size:10px;color:#9ca3af;font-weight:600;margin-left:4px}
-.catalog-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.catalog-mode .thumb{height:135px}.catalog-mode .name{font-size:12px;padding:9px 10px 11px}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:"Segoe UI",Arial,sans-serif;color:#151515}
+.shell{position:absolute;inset:5px;background:rgba(255,255,255,.985);border:1px solid #e5e7eb;border-radius:25px;box-shadow:0 18px 55px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column}
+.header{padding:16px 16px 8px}.brand{display:flex;align-items:center;justify-content:space-between}.name{font-size:18px;font-weight:850;letter-spacing:-.4px}.sub{font-size:11px;color:#68707a;margin-top:2px}.close{width:32px;height:32px;border:0;border-radius:50%;background:#f2f3f5;color:#68707a;font-size:18px;cursor:pointer}.close:hover{background:#e8eaed;color:#111}
+.search{margin:6px 12px 10px;height:48px;border:1px solid #d8dde4;border-radius:14px;background:#fafbfc;box-shadow:0 0 0 3px rgba(246,204,75,.28);display:flex;align-items:center;padding:0 14px}.search input{border:0;outline:0;background:transparent;width:100%;font-size:14px;color:#111}.tabs{display:flex;align-items:center;padding:0 16px 10px;gap:6px}.tab{border:0;background:transparent;padding:9px 12px;border-radius:11px;font-weight:750;font-size:12px;color:#68707a;cursor:pointer}.tab.active{background:#f0f1f3;color:#111}.all{margin-left:auto}.content{padding:0 12px 8px;overflow:auto;flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{border:1px solid #dfe3e8;border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}.card:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(0,0,0,.08)}.thumb{height:128px;background:#f7f8fa;display:flex;align-items:center;justify-content:center;overflow:hidden}.thumb img{width:100%;height:100%;object-fit:cover}.ctitle{font-size:12px;font-weight:750;padding:10px 11px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty{padding:30px 12px;text-align:center;color:#7a818a;font-size:13px}.footer{padding:9px 12px 12px;border-top:1px solid #f0f1f2;background:#fff}.updates{width:100%;height:36px;border:1px solid #dfe3e8;border-radius:11px;background:#fafbfc;font-size:11px;font-weight:750;cursor:pointer}.status{height:16px;margin-top:6px;font-size:10px;color:#7b8188;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.site{padding:2px 0 0;font-size:10px;color:#8a9097;cursor:pointer}.content::-webkit-scrollbar{width:8px}.content::-webkit-scrollbar-thumb{background:#a9adb3;border-radius:10px}.content::-webkit-scrollbar-track{background:transparent}
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="panel" id="panel">
-    <div class="header"><div><div class="title">Vekto</div><div class="sub">Tu asistente creativo de Vektolab</div></div><button class="close" id="close" aria-label="Cerrar">×</button></div>
-    <input id="search" class="search" placeholder="Buscar generadores..." autocomplete="off">
-    <div class="tabs"><button class="tab active" id="tabGenerators" type="button">Generadores</button><button class="tab" id="tabDesigns" type="button">Diseños</button><span class="all-link" id="explore">Ver todos</span></div>
-    <div class="designs" id="designs"></div>
-    <div class="toast-stack" id="toastStack"></div>
-    <button class="check" id="checkUpdates">↻ Buscar actualizaciones</button>
-    <div class="footer"><span class="link" id="site">Abrir Vektolab.com</span><span class="version" id="versionLabel">v0.7.5</span></div>
-  </div>
-  </div>
+<div class="shell">
+  <div class="header"><div class="brand"><div><div class="name">Vekto</div><div class="sub">Tu asistente creativo de Vektolab</div></div><button class="close" id="close">×</button></div></div>
+  <div class="search"><input id="search" placeholder="Buscar generadores..."></div>
+  <div class="tabs"><button class="tab active" data-tab="generators">Generadores</button><button class="tab" data-tab="designs">Diseños</button><button class="tab all" id="all">Ver todos</button></div>
+  <main class="content"><div class="grid" id="grid"></div><div class="empty" id="empty" hidden>No encontramos resultados.</div></main>
+  <footer class="footer"><button class="updates" id="updates">↻ Buscar actualizaciones</button><div class="status" id="status"></div><div class="site" id="site">Abrir Vektolab.com</div></footer>
+</div>
 <script src="assistant.js"></script>
 </body>
 </html>

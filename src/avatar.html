@@ -1,17 +1,16 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline'; script-src 'self';">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vekto</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
-body{user-select:none;-webkit-user-select:none}
-#avatar{position:absolute;inset:8px;border-radius:50%;cursor:grab;filter:drop-shadow(0 8px 18px rgba(0,0,0,.18));transform-origin:50% 78%;touch-action:none;user-select:none}
-#avatar.dragging{cursor:grabbing;filter:drop-shadow(0 13px 24px rgba(0,0,0,.25))}
-#avatar img{width:100%;height:100%;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+body{display:grid;place-items:center;user-select:none;-webkit-user-select:none}
+#avatar{width:88px;height:88px;display:grid;place-items:center;cursor:grab;transform-origin:50% 80%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.16));transition:transform .18s cubic-bezier(.2,.8,.2,1),filter .18s ease}
+#avatar.dragging{cursor:grabbing;filter:drop-shadow(0 12px 14px rgba(0,0,0,.22));transform:scale(1.06) rotate(-3deg)}
+#avatar.released{animation:release .32s cubic-bezier(.2,1.5,.4,1)}
+img{width:88px;height:88px;object-fit:contain;pointer-events:none;-webkit-user-drag:none}
+@keyframes release{0%{transform:scale(1.06) rotate(-3deg)}55%{transform:scale(.94,1.04) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
 </style>
 </head>
 <body>
