@@ -9,6 +9,7 @@ const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) app.quit();
 
 let assistantWindow = null;
+let panelWindow = null;
 let generatorWindow = null;
 let updateState = { status:'idle', version:null, percent:0, error:null };
 let updateCheckRunning = false;
@@ -55,7 +56,7 @@ autoUpdater.on('error',err=>{
 
 function setUpdateState(next){
   updateState={...updateState,...next};
-  if(assistantWindow&&!assistantWindow.isDestroyed()) assistantWindow.webContents.send('update-state',updateState);
+  if(panelWindow&&!panelWindow.isDestroyed()) panelWindow.webContents.send('update-state',updateState);
 }
 async function checkForUpdates(){
   if(!app.isPackaged){setUpdateState({status:'development',version:app.getVersion(),error:null});return;}
@@ -106,9 +107,9 @@ function loadGenerators(){
   });
 }
 function sendGenerators(){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
+  if(!panelWindow||panelWindow.isDestroyed())return;
   const root=getContentRoot();
-  assistantWindow.webContents.send('generators',loadGenerators().map(g=>({
+  panelWindow.webContents.send('generators',loadGenerators().map(g=>({
     slug:g.slug,name:g.name,file:g.file,
     image:g.image?pathToFileURL(path.join(root,g.image)).href:null
   })));
@@ -120,9 +121,9 @@ function loadDesigns(){
   }catch(_){return [];}
 }
 function sendDesigns(){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
+  if(!panelWindow||panelWindow.isDestroyed())return;
   const root=getContentRoot();
-  assistantWindow.webContents.send('designs',loadDesigns().map(d=>({
+  panelWindow.webContents.send('designs',loadDesigns().map(d=>({
     slug:d.slug,name:d.name,file:d.file||null,url:d.url||null,
     image:d.image?pathToFileURL(path.join(root,d.image)).href:null
   })));
@@ -260,62 +261,76 @@ function startAvatarPhysics(vx,vy){
     }
   },16);
 }
-function resizeForState(open,mode='home'){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
-
-  // avatarAnchor SIEMPRE representa la esquina superior izquierda visual de
-  // Vekto en pantalla. El menú se posiciona alrededor de ese punto; nunca
-  // se reutilizan las coordenadas del menú como si fueran las del avatar.
+function positionPanelWindow(){
+  if(!panelWindow||panelWindow.isDestroyed())return;
   const p=ensureAvatarPosition();
-
-  if(open){
-    panelMode=mode;
-    const [w,h]=mode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
-    const offset=mode==='catalog'?AVATAR_CATALOG_OFFSET:AVATAR_HOME_OFFSET;
-    const area=getAvatarAreaAt(p.x,p.y);
-
-    // La ventana grande se coloca de modo que el avatar quede EXACTAMENTE
-    // donde estaba antes de abrir. Si el panel no entra, solo se desplaza
-    // el panel; p/ avatarAnchor no se modifica.
-    const desiredX=Math.round(p.x-offset.x);
-    const desiredY=Math.round(p.y-offset.y);
-    const safeX=Math.max(area.x,Math.min(desiredX,area.x+area.width-w));
-    const safeY=Math.max(area.y,Math.min(desiredY,area.y+area.height-h));
-
-    assistantWindow.setSize(w,h,false);
-    assistantWindow.setPosition(safeX,safeY,false);
-  }else{
-    panelMode='home';
-    const safe=clampAvatarPosition(p.x,p.y);
-    avatarAnchor=safe;
-    assistantWindow.setSize(AVATAR_SIZE[0],AVATAR_SIZE[1],false);
-    // Restaurar la ventana pequeña compensando la posición del avatar dentro
-    // de ella. Así cerrar el menú NO mueve Vekto.
-    assistantWindow.setPosition(
-      safe.x-AVATAR_CLOSED_OFFSET.x,
-      safe.y-AVATAR_CLOSED_OFFSET.y,
-      false
-    );
-  }
+  const [pw,ph]=panelMode==='catalog'?CATALOG_SIZE:PANEL_SIZE;
+  const area=getAvatarAreaAt(p.x,p.y);
+  // El menú se ancla al avatar, pero nunca mueve al avatar.
+  let x=Math.round(p.x + AVATAR_VISUAL_SIZE[0] - pw);
+  let y=Math.round(p.y + AVATAR_VISUAL_SIZE[1] - ph);
+  x=Math.max(area.x,Math.min(x,area.x+area.width-pw));
+  y=Math.max(area.y,Math.min(y,area.y+area.height-ph));
+  panelWindow.setSize(pw,ph,false);
+  panelWindow.setPosition(x,y,false);
 }
-
-function setPanelOpen(open){
-  if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const shouldOpen=!!open;
-  if(shouldOpen===panelOpen)return;
-  if(shouldOpen){
-    // avatarAnchor es la única fuente de verdad. Abrir el menú jamás lee ni
-    // reutiliza las coordenadas de la ventana grande.
-    stopAvatarPhysics(true);
+function createPanelWindow(mode='home'){
+  if(panelWindow&&!panelWindow.isDestroyed()){
+    panelMode=mode;
+    positionPanelWindow();
+    panelWindow.show();
+    panelWindow.focus();
+    return panelWindow;
   }
-  panelOpen=shouldOpen;
-  resizeForState(panelOpen,'home');
-  assistantWindow.setSkipTaskbar(true);
-  if(panelOpen){assistantWindow.show();assistantWindow.focus();}
-  else assistantWindow.showInactive();
+  panelMode=mode;
+  panelWindow=new BrowserWindow({
+    width:mode==='catalog'?CATALOG_SIZE[0]:PANEL_SIZE[0],
+    height:mode==='catalog'?CATALOG_SIZE[1]:PANEL_SIZE[1],
+    frame:false,transparent:true,resizable:false,movable:false,
+    alwaysOnTop:true,skipTaskbar:true,show:false,hasShadow:false,
+    backgroundColor:'#00000000',
+    webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:false}
+  });
+  panelWindow.setAlwaysOnTop(true,'floating');
+  panelWindow.setSkipTaskbar(true);
+  panelWindow.on('closed',()=>{panelWindow=null;panelOpen=false;panelMode='home';});
+  panelWindow.on('blur',()=>{
+    if(!panelWindow||panelWindow.isDestroyed())return;
+    if(panelOpen) setPanelOpen(false);
+  });
+  return panelWindow;
+}
+function setPanelOpen(open){
+  const shouldOpen=!!open;
+  if(shouldOpen){
+    ensureAvatarPosition();
+    panelOpen=true;
+    if(!panelWindow||panelWindow.isDestroyed()){
+      const w=createPanelWindow('home');
+      w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
+        if(!w||w.isDestroyed())return;
+        w.webContents.send('update-state',updateState);
+        w.webContents.send('app-version',app.getVersion());
+        sendGenerators();sendDesigns();
+        if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
+        positionPanelWindow();
+        w.show();w.focus();
+      });
+    }else{
+      panelMode='home';
+      positionPanelWindow();
+      panelWindow.show();panelWindow.focus();
+    }
+    return;
+  }
+  panelOpen=false;
+  if(panelWindow&&!panelWindow.isDestroyed()){
+    panelWindow.hide();
+  }
 }
 function beginAvatarDrag(x,y){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
+  if(panelOpen)setPanelOpen(false);
   stopAvatarPhysics(false);
   const p=ensureAvatarPosition();
   dragState={startX:p.x,startY:p.y,pointerX:x,pointerY:y};
@@ -342,6 +357,7 @@ function moveAvatarDrag(x,y){
   ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
   avatarAnchor={x:Math.round(nx),y:Math.round(ny)};
   {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
+  if(panelOpen)positionPanelWindow();
 }
 function endAvatarDrag(vx=0,vy=0){
   if(!dragState)return;
@@ -382,11 +398,25 @@ function openDesign(slug){
 }
 function openCatalog(){
   if(!assistantWindow||assistantWindow.isDestroyed())return;
-  const p=ensureAvatarPosition();
+  ensureAvatarPosition();
   panelOpen=true;
-  resizeForState(true,'catalog');
-  assistantWindow.webContents.send('catalog-mode');
-  assistantWindow.setSkipTaskbar(true);assistantWindow.show();assistantWindow.focus();
+  panelMode='catalog';
+  const w=createPanelWindow('catalog');
+  const showCatalog=()=>{
+    if(!w||w.isDestroyed())return;
+    positionPanelWindow();
+    w.webContents.send('catalog-mode');
+    w.show();w.focus();
+  };
+  if(w.webContents.getURL()) showCatalog();
+  else w.loadFile(path.join(__dirname,'assistant.html')).then(()=>{
+    if(w.isDestroyed())return;
+    w.webContents.send('update-state',updateState);
+    w.webContents.send('app-version',app.getVersion());
+    sendGenerators();sendDesigns();
+    if(contentUpdater)w.webContents.send('content-state',contentUpdater.getState());
+    showCatalog();
+  });
 }
 function closeCatalog(){setPanelOpen(false);}
 function closeGeneratorView(){currentGenerator=null;if(generatorWindow&&!generatorWindow.isDestroyed())generatorWindow.close();setPanelOpen(false);}
@@ -415,16 +445,12 @@ function createAssistant(){
   assistantWindow.setIgnoreMouseEvents(false);
   assistantWindow.setFocusable(true);
   assistantWindow.setSkipTaskbar(true);
-  assistantWindow.loadFile(path.join(__dirname,'assistant.html'));
+  assistantWindow.loadFile(path.join(__dirname,'avatar.html'));
   assistantWindow.webContents.on('did-finish-load',()=>{
     avatarAnchor=loadSavedAvatarPosition();
-    resizeForState(false, 'home');
+    setAvatarPosition(avatarAnchor.x,avatarAnchor.y,true);
     assistantWindow.setSkipTaskbar(true);
     assistantWindow.showInactive();
-    assistantWindow.webContents.send('update-state',updateState);
-    assistantWindow.webContents.send('app-version',app.getVersion());
-    sendGenerators();sendDesigns();
-    if(contentUpdater)assistantWindow.webContents.send('content-state',contentUpdater.getState());
   });
   assistantWindow.on('closed',()=>assistantWindow=null);
 }
@@ -463,7 +489,7 @@ app.whenReady().then(()=>{
   configureStartup();
   contentUpdater=new ContentUpdater(app);
   contentUpdater.onState=state=>{
-    if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.webContents.send('content-state',state);
+    if(panelWindow&&!panelWindow.isDestroyed())panelWindow.webContents.send('content-state',state);
   };
   createAssistant();
 
@@ -475,11 +501,11 @@ app.whenReady().then(()=>{
   contentUpdater.ensureSeeded().then(()=>{sendGenerators();sendDesigns();syncContent();});
   screen.on('display-metrics-changed',()=>{
     if(!assistantWindow||assistantWindow.isDestroyed())return;
-    if(panelOpen)return;
     const p=ensureAvatarPosition();
     avatarAnchor=clampAvatarPosition(p.x,p.y);
     {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
     saveAvatarPosition(avatarAnchor);
+    if(panelOpen)positionPanelWindow();
   });
   setTimeout(()=>{checkForUpdates();syncContent();},7000);
   setInterval(checkForUpdates,UPDATE_CHECK_MINUTES*60*1000);

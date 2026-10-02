@@ -68,71 +68,8 @@ tabGenerators.addEventListener('click',()=>selectTab('generators')); tabDesigns.
 search.addEventListener('input',()=>render(search.value));
 document.getElementById('site').addEventListener('click',()=>window.vektolab.openSite());
 
-const avatar=document.getElementById('avatar');
-let dragging=false,pointerId=null,lastX=0,lastY=0,lastTime=0,moved=false,lastVx=0,lastVy=0,panelWasOpen=false;
 
-function openPanel(){
-  app.classList.add('open');
-  window.vektolab.setPanelOpen?.(true);
-  setTimeout(()=>search.focus(),80);
-}
+// El avatar vive en una ventana independiente; este panel solo contiene el menú.
 function closePanel(){
-  app.classList.remove('open');
-  window.vektolab.setPanelOpen?.(false);
+  window.vektolab.setPanelOpen(false);
 }
-function togglePanelFromAvatar(){
-  if(panelWasOpen) closePanel();
-  else openPanel();
-}
-function clampVelocity(v){return Math.max(-2200,Math.min(2200,v));}
-
-avatar.addEventListener('pointerdown',e=>{
-  if(e.button!==0||dragging)return;
-  e.preventDefault();e.stopPropagation();
-  dragging=true;pointerId=e.pointerId;moved=false;panelWasOpen=app.classList.contains('open');
-  lastX=e.screenX;lastY=e.screenY;lastTime=performance.now();lastVx=0;lastVy=0;
-  avatar.classList.add('dragging');
-  try{avatar.setPointerCapture(e.pointerId)}catch(_){}
-  window.vektolab.startAvatarDrag(e.screenX,e.screenY);
-});
-window.addEventListener('pointermove',e=>{
-  if(!dragging||e.pointerId!==pointerId)return;
-  e.preventDefault();
-  const now=performance.now(),dt=Math.max(1,now-lastTime);
-  const dx=e.screenX-lastX,dy=e.screenY-lastY;
-  if(Math.abs(dx)+Math.abs(dy)>3)moved=true;
-  const vx=clampVelocity(dx/(dt/1000)),vy=clampVelocity(dy/(dt/1000));
-  lastVx=vx;lastVy=vy;
-  const tilt=Math.max(-16,Math.min(16,vx*.012+dy*.01));
-  avatar.style.setProperty('--tilt',`${tilt.toFixed(2)}deg`);
-  window.vektolab.moveAvatarDrag(e.screenX,e.screenY,vx,vy);
-  lastX=e.screenX;lastY=e.screenY;lastTime=now;
-},{passive:false});
-function finishAvatar(e){
-  if(!dragging||e.pointerId!==pointerId)return;
-  e.preventDefault();e.stopPropagation();
-  const now=performance.now(),dt=Math.max(1,now-lastTime);
-  const rvx=clampVelocity((e.screenX-lastX)/(dt/1000));
-  const rvy=clampVelocity((e.screenY-lastY)/(dt/1000));
-  const vx=Math.abs(rvx)>120?rvx:lastVx;
-  const vy=Math.abs(rvy)>120?rvy:lastVy;
-  const wasClick=!moved;
-  dragging=false;pointerId=null;
-  avatar.classList.remove('dragging');avatar.style.removeProperty('--tilt');
-  try{avatar.releasePointerCapture?.(e.pointerId)}catch(_){}
-  window.vektolab.endAvatarDrag(vx,vy);
-  if(wasClick) setTimeout(togglePanelFromAvatar,0);
-}
-window.addEventListener('pointerup',finishAvatar);
-window.addEventListener('pointercancel',finishAvatar);
-
-window.vektolab.onAvatarEdgeBounce?.(()=>{
-  avatar.classList.remove('edge-hit');
-  void avatar.offsetWidth;
-  avatar.classList.add('edge-hit');
-  setTimeout(()=>avatar.classList.remove('edge-hit'),260);
-});
-
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
-window.vektolab.onUpdateState(showUpdate); window.vektolab.onContentState(showContentUpdate);
-window.vektolab.getUpdateState(); window.vektolab.getContentState(); window.vektolab.getGenerators(); window.vektolab.getDesigns(); render();
