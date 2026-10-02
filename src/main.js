@@ -25,6 +25,7 @@ let dragMoved = false;
 const MAX_BOUNCES = 5;
 
 const AVATAR_SIZE = [90,90];
+const AVATAR_VISUAL_SIZE = [78,78];
 const PANEL_SIZE = [430,640];
 // Posición visual del avatar dentro de la ventana. La ventana cambia de tamaño
 // al abrir el menú, pero estas coordenadas mantienen al avatar en el mismo
@@ -129,32 +130,36 @@ function sendDesigns(){
 
 function getPositionFile(){return path.join(app.getPath('userData'),POSITION_FILE);}
 
-// La posición de Vekto se guarda siempre como la esquina superior izquierda
-// de su ventana pequeña. El menú puede cambiar el tamaño de la ventana,
-// pero jamás cambia esta posición.
+// avatarAnchor es SIEMPRE la esquina superior izquierda del avatar visible
+// (78x78), no la esquina de la ventana Electron (90x90). El menú puede
+// cambiar el tamaño y origen de la ventana, pero jamás cambia avatarAnchor.
 function getAvatarAreaAt(x,y){
-  const [w,h]=AVATAR_SIZE;
+  const [w,h]=AVATAR_VISUAL_SIZE;
   return screen.getDisplayNearestPoint({x:Math.round(x+w/2),y:Math.round(y+h/2)}).workArea;
 }
 function clampAvatarPosition(x,y,area=null){
-  const [w,h]=AVATAR_SIZE;
+  const [w,h]=AVATAR_VISUAL_SIZE;
   const a=area||getAvatarAreaAt(x,y);
   return {
     x:Math.max(a.x,Math.min(Math.round(x),a.x+a.width-w)),
     y:Math.max(a.y,Math.min(Math.round(y),a.y+a.height-h))
   };
 }
+function avatarWindowPosition(x,y){
+  return {
+    x:Math.round(x-AVATAR_CLOSED_OFFSET.x),
+    y:Math.round(y-AVATAR_CLOSED_OFFSET.y)
+  };
+}
 function loadSavedAvatarPosition(){
-  const [w,h]=AVATAR_SIZE;
+  const [w,h]=AVATAR_VISUAL_SIZE;
   try{
     const d=JSON.parse(fs.readFileSync(getPositionFile(),'utf8'));
     if(Number.isFinite(d.x)&&Number.isFinite(d.y)){
-      // Los archivos anteriores guardaban el centro. Convertimos y
-      // normalizamos para que ninguna versión anterior pueda dejar a Vekto
-      // fuera del área de trabajo.
-      const looksLikeCenter=true;
-      const rawX=looksLikeCenter?d.x-w/2:d.x;
-      const rawY=looksLikeCenter?d.y-h/2:d.y;
+      // v2 guarda la esquina superior izquierda del avatar visible.
+      // Las versiones anteriores guardaban el centro; las migramos una sola vez.
+      const rawX=d.version===2?d.x:d.x-w/2;
+      const rawY=d.version===2?d.y:d.y-h/2;
       return clampAvatarPosition(rawX,rawY);
     }
   }catch(_){ }
@@ -171,7 +176,10 @@ function ensureAvatarPosition(){
 function setAvatarPosition(x,y,clamp=true){
   const p=clamp?clampAvatarPosition(x,y):{x:Math.round(x),y:Math.round(y)};
   avatarAnchor={x:p.x,y:p.y};
-  if(assistantWindow&&!assistantWindow.isDestroyed())assistantWindow.setPosition(p.x,p.y,false);
+  if(assistantWindow&&!assistantWindow.isDestroyed()){
+    const wp=avatarWindowPosition(p.x,p.y);
+    assistantWindow.setPosition(wp.x,wp.y,false);
+  }
   return avatarAnchor;
 }
 function saveAvatarPosition(p){
@@ -179,30 +187,13 @@ function saveAvatarPosition(p){
   avatarAnchor=safe;
   try{
     fs.mkdirSync(path.dirname(getPositionFile()),{recursive:true});
-    // Mantener compatibilidad con el archivo anterior: se guarda el centro.
-    fs.writeFileSync(getPositionFile(),JSON.stringify({x:Math.round(safe.x+AVATAR_SIZE[0]/2),y:Math.round(safe.y+AVATAR_SIZE[1]/2)}));
+    // Guardamos una coordenada canónica del avatar visible.
+    fs.writeFileSync(getPositionFile(),JSON.stringify({version:2,x:Math.round(safe.x),y:Math.round(safe.y)}));
   }catch(_){ }
 }
 function avatarTopLeft(){return ensureAvatarPosition();}
 
-// Sincroniza la posición persistente con la posición física real de la ventana
-// pequeña. Esto se usa SOLO antes de abrir el menú, cuando la ventana todavía
-// representa exclusivamente al avatar. El menú nunca vuelve a escribir esta
-// posición.
-function captureAvatarPositionFromWindow(){
-  if(!assistantWindow||assistantWindow.isDestroyed())return ensureAvatarPosition();
-  const bounds=assistantWindow.getBounds();
-  // La ventana cerrada es 90x90 y el avatar visual ocupa 78x78 con
-  // right:9px / bottom:7px. Por eso la posición real de Vekto no es
-  // exactamente el origen de la ventana.
-  const p=clampAvatarPosition(
-    bounds.x + AVATAR_CLOSED_OFFSET.x,
-    bounds.y + AVATAR_CLOSED_OFFSET.y
-  );
-  avatarAnchor={x:p.x,y:p.y};
-  return avatarAnchor;
-}
-
+// La ventana nunca vuelve a ser una fuente de verdad para la posición del avatar.
 function stopAvatarPhysics(save=true){
   if(physicsTimer){clearInterval(physicsTimer);physicsTimer=null;}
   if(save&&assistantWindow&&!assistantWindow.isDestroyed())saveAvatarPosition(avatarTopLeft());
@@ -211,7 +202,7 @@ function startAvatarPhysics(vx,vy){
   stopAvatarPhysics(false);
   if(!assistantWindow||assistantWindow.isDestroyed()||panelOpen)return;
   const speed=Math.hypot(vx,vy);
-  const [w,h]=AVATAR_SIZE;
+  const [w,h]=AVATAR_VISUAL_SIZE;
   const start=ensureAvatarPosition();
   const area=getAvatarAreaAt(start.x,start.y);
   const minX=area.x;
@@ -223,7 +214,7 @@ function startAvatarPhysics(vx,vy){
     Math.max(minY,Math.min(Math.round(start.y),maxY))
   ];
   avatarAnchor={x:pos[0],y:pos[1]};
-  assistantWindow.setPosition(pos[0],pos[1],false);
+  {const wp=avatarWindowPosition(pos[0],pos[1]);assistantWindow.setPosition(wp.x,wp.y,false);}
 
   if(speed<180){saveAvatarPosition({x:pos[0],y:pos[1]});return;}
 
@@ -261,7 +252,7 @@ function startAvatarPhysics(vx,vy){
 
     // La posición física y la posición persistente son la misma coordenada.
     avatarAnchor={x:Math.round(pos[0]),y:Math.round(pos[1])};
-    assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
+    {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
 
     if(physicsBounceCount>=MAX_BOUNCES||Math.hypot(velocityX,velocityY)<75){
       saveAvatarPosition(avatarAnchor);
@@ -288,8 +279,8 @@ function resizeForState(open,mode='home'){
     // el panel; p/ avatarAnchor no se modifica.
     const desiredX=Math.round(p.x-offset.x);
     const desiredY=Math.round(p.y-offset.y);
-    const safeX=Math.max(area.x+4,Math.min(desiredX,area.x+area.width-w-4));
-    const safeY=Math.max(area.y+4,Math.min(desiredY,area.y+area.height-h-4));
+    const safeX=Math.max(area.x,Math.min(desiredX,area.x+area.width-w));
+    const safeY=Math.max(area.y,Math.min(desiredY,area.y+area.height-h));
 
     assistantWindow.setSize(w,h,false);
     assistantWindow.setPosition(safeX,safeY,false);
@@ -313,8 +304,8 @@ function setPanelOpen(open){
   const shouldOpen=!!open;
   if(shouldOpen===panelOpen)return;
   if(shouldOpen){
-    // Si venimos de la ventana pequeña, esta es la única posición que cuenta.
-    captureAvatarPositionFromWindow();
+    // avatarAnchor es la única fuente de verdad. Abrir el menú jamás lee ni
+    // reutiliza las coordenadas de la ventana grande.
     stopAvatarPhysics(true);
   }
   panelOpen=shouldOpen;
@@ -343,14 +334,14 @@ function moveAvatarDrag(x,y){
     dragState.pointerY=y;
   }
 
-  const [w,h]=AVATAR_SIZE;
+  const [w,h]=AVATAR_VISUAL_SIZE;
   const area=getAvatarAreaAt(dragState.startX,dragState.startY);
   let nx=dragState.startX+x-dragState.pointerX;
   let ny=dragState.startY+y-dragState.pointerY;
   nx=Math.max(area.x,Math.min(nx,area.x+area.width-w));
   ny=Math.max(area.y,Math.min(ny,area.y+area.height-h));
   avatarAnchor={x:Math.round(nx),y:Math.round(ny)};
-  assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
+  {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
 }
 function endAvatarDrag(vx=0,vy=0){
   if(!dragState)return;
@@ -487,7 +478,7 @@ app.whenReady().then(()=>{
     if(panelOpen)return;
     const p=ensureAvatarPosition();
     avatarAnchor=clampAvatarPosition(p.x,p.y);
-    assistantWindow.setPosition(avatarAnchor.x,avatarAnchor.y,false);
+    {const wp=avatarWindowPosition(avatarAnchor.x,avatarAnchor.y);assistantWindow.setPosition(wp.x,wp.y,false);}
     saveAvatarPosition(avatarAnchor);
   });
   setTimeout(()=>{checkForUpdates();syncContent();},7000);
